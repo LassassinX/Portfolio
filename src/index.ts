@@ -9,7 +9,7 @@ import { gsap } from 'gsap';
 import { PixiPlugin } from 'gsap/PixiPlugin';
 
 // CONSTANTS
-const GROW_FACTOR = 3
+const GROW_FACTOR = 5
 
 gsap.registerPlugin(PixiPlugin);
 // give the plugin a reference to the PIXI object
