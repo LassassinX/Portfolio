@@ -36,7 +36,7 @@
 		"max": 0.8
 	},
 	"blendMode": "normal",
-	"frequency": 0.002,
+	"frequency": 0.001,
 	"emitterLifetime": -1,
 	"maxParticles": 1000,
 	"pos": {
@@ -48,7 +48,7 @@
 	"spawnCircle": {
 		"x": 5,
 		"y": 5,
-		"r": 150,
-		"minR": 20
+		"r": 150, 
+		"minR": 100
 	}
 }
