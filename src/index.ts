@@ -118,6 +118,7 @@ innerCircle.position = circle.position;
 
 circle.eventMode = 'static';
 circle.cursor = 'pointer';
+circle.alpha = 0
 
 let growing = gsap.to([circle, innerCircle], {
 	pixi: { scale: GROW_FACTOR, rotation: 60, alpha: 1 },
@@ -125,10 +126,10 @@ let growing = gsap.to([circle, innerCircle], {
 	ease: 'expo.inOut',
 	paused: true,
 	onUpdate: () => {
-		if (growing.progress() > 0.95) {
+		if (growing.progress() > 0.7) {
 			emitter.emit = true
 			outerEmitter.emit = true
-		} else if (growing.progress() < 0.95 && emitter.emit) {
+		} else {
 			emitter.emit = false
 			outerEmitter.emit = false
 		}
@@ -152,13 +153,21 @@ container.filters = [
 	glowFilter
 ];
 
-container.alpha = 0
-
 displacementSprite.position = circle.position;
 
 
 container.addChild(circle);
 container.addChild(innerCircle);
+
+gsap.to(
+	circle, 
+	{
+		pixi: { alpha: 1 },
+		duration: 1,
+		ease: 'expo.inOut',
+		delay: 1,
+	}
+)
 // mouse click event
 
 
@@ -185,12 +194,6 @@ const load = async () => {
 
 	// ticker
 	app.ticker.add((delta) => {
-		if (container.alpha < 1)
-			container.alpha += 0.005 * delta;
-
-		// randomize the glow filter alpha to show a flickering effect
-		let now = Date.now();
-
 		// Animate the displacement filter
 		displacementSprite.angle += 0.5 * delta;
 		displacementSprite.x += 1 * delta;

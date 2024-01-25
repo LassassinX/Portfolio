@@ -1,16 +1,16 @@
 {
 	"alpha": {
-		"start": 0.91,
-		"end": 0.27
+		"start": 1,
+		"end": 1
 	},
 	"scale": {
-		"start": 0.07,
-		"end": 0.01,
+		"start": 0.1,
+		"end": 0.03, 
 		"minimumScaleMultiplier": 1
 	},
 	"color": {
 		"start": "#93edfd",
-		"end": "#ffffff"
+		"end": "#ff680a"
 	},
 	"speed": {
 		"start": 120,
