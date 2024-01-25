@@ -147,6 +147,11 @@ circle.on('mouseleave', () => {
 	growing.reverse()
 })
 
+
+circle.on('mousedown', () => { 
+	// use gsap to animate the circle to scale down
+})
+
 // make the circle glow outwards
 container.filters = [
 	displacementFilter,
@@ -196,7 +201,7 @@ const load = async () => {
 	app.ticker.add((delta) => {
 		// Animate the displacement filter
 		displacementSprite.angle += 0.5 * delta;
-		displacementSprite.x += 1 * delta;
+		displacementSprite.x += 2 * delta;
 		// Reset x to 0 when it's over width to keep values from going to very huge numbers.
 		if (displacementSprite.x > app.screen.width) {
 			displacementSprite.x = 0;
