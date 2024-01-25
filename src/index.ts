@@ -33,7 +33,7 @@ document.body.appendChild(app.view);
 
 
 const container = new PIXI.Container();
-const particleContainer =  new PIXI.ParticleContainer()
+const particleContainer = new PIXI.ParticleContainer()
 particleContainer.eventMode = 'none'
 particleContainer.position = new PIXI.Point(app.screen.width / 2, app.screen.height / 2)
 
@@ -66,7 +66,7 @@ const outerEmitter = new particles.Emitter(
 emitter.autoUpdate = true
 emitter.emit = false
 
-outerEmitter.autoUpdate = true 
+outerEmitter.autoUpdate = true
 outerEmitter.emit = false
 
 const displacementSprite = PIXI.Sprite.from('https://pixijs.com/assets/pixi-filters/displacement_map_repeat.jpg');
@@ -94,15 +94,17 @@ innerCircle.alpha = 0.4
 innerCircle.endFill()
 innerCircle.eventMode = 'none'
 
+let innerGlowFilter = new GlowFilter({
+	color: 0xffffff,
+	quality: .05,
+	innerStrength: 2,
+	alpha: 0.5,
+	distance: 30,
+	outerStrength: 1.5,
+})
+
 innerCircle.filters = [
-	new GlowFilter({
-		color: 0xffffff,
-		quality: .05,
-		innerStrength: 2,
-		alpha: 0.5,
-		distance: 30,
-		outerStrength: 1.5,
-	})
+	innerGlowFilter
 ]
 
 
@@ -135,21 +137,43 @@ let growing = gsap.to([circle, innerCircle], {
 		}
 	}
 });
-
+let isExploded = false
+let explosion = gsap.to([circle, innerCircle], {
+	pixi: { scale: 50, alpha: 1 },
+	duration: 2,
+	ease: 'expo.inOut',
+	paused: true,
+	onStart: () => {
+		emitter.emit = false
+		outerEmitter.emit = false
+		innerGlowFilter.alpha = 0
+		glowFilter.alpha = 0
+		isExploded = true
+	},
+	onComplete: () => {
+		circle.destroy()
+		innerCircle.destroy()
+	}
+})
 
 circle.on('mouseenter', () => {
 	// use gsap to animate the circle to scale up
-	growing.play()
+	if (!isExploded) {
+		growing.play()
+	}
 })
 
 circle.on('mouseleave', () => {
 	// use gsap to animate the circle to scale down
-	growing.reverse()
+	if (!isExploded) {
+		growing.reverse()
+	}
 })
 
 
-circle.on('mousedown', () => { 
-	// use gsap to animate the circle to scale down
+circle.on('mousedown', () => {
+	// explode the circle
+	explosion.play()
 })
 
 // make the circle glow outwards
@@ -165,7 +189,7 @@ container.addChild(circle);
 container.addChild(innerCircle);
 
 gsap.to(
-	circle, 
+	circle,
 	{
 		pixi: { alpha: 1 },
 		duration: 1,
