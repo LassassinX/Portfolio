@@ -45,6 +45,7 @@ app.stage.addChild(particleContainer);
 
 // particles
 import particleConfig from './emitter.json'
+import outerParticleConfig from './emitter-outer.json'
 
 const emitter = new particles.Emitter(
 	particleContainer,
@@ -54,8 +55,19 @@ const emitter = new particles.Emitter(
 	)
 )
 
+const outerEmitter = new particles.Emitter(
+	particleContainer,
+	particles.upgradeConfig(
+		outerParticleConfig,
+		[PIXI.Texture.from('./assets/particle.png')]
+	)
+)
+
 emitter.autoUpdate = true
 emitter.emit = false
+
+outerEmitter.autoUpdate = true 
+outerEmitter.emit = false
 
 const displacementSprite = PIXI.Sprite.from('https://pixijs.com/assets/pixi-filters/displacement_map_repeat.jpg');
 displacementSprite.texture.baseTexture.wrapMode = PIXI.WRAP_MODES.REPEAT;
@@ -113,10 +125,12 @@ let growing = gsap.to([circle, innerCircle], {
 	ease: 'expo.inOut',
 	paused: true,
 	onUpdate: () => {
-		if (growing.progress() > 0.95 && !emitter.emit) {
+		if (growing.progress() > 0.95) {
 			emitter.emit = true
+			outerEmitter.emit = true
 		} else if (growing.progress() < 0.95 && emitter.emit) {
 			emitter.emit = false
+			outerEmitter.emit = false
 		}
 	}
 });
