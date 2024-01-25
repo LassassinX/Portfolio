@@ -25,6 +25,7 @@
   "dependencies": {
     "@pixi/filter-glow": "^5.2.1",
     "@pixi/graphics-smooth": "^1.1.0",
+    "@pixi/particle-emitter": "^5.0.8",
     "animejs": "^3.2.2",
     "gsap": "^3.12.5",
     "pixi.js": "^7.3.3"

@@ -1,5 +1,6 @@
 import './style.css';
 import * as PIXI from 'pixi.js';
+import * as particles from '@pixi/particle-emitter'
 import { SmoothGraphics as Graphics } from '@pixi/graphics-smooth';
 import { GlowFilter } from '@pixi/filter-glow';
 import anime from 'animejs/lib/anime.es.js';
@@ -30,11 +31,31 @@ const randomFromRange = (min: number, max: number) => Math.random() * (max - min
 document.body.appendChild(app.view);
 
 
+
 const container = new PIXI.Container();
+const particleContainer =  new PIXI.ParticleContainer()
+particleContainer.eventMode = 'none'
+particleContainer.position = new PIXI.Point(app.screen.width / 2, app.screen.height / 2)
+
 container.eventMode = 'static'
 
 
 app.stage.addChild(container);
+app.stage.addChild(particleContainer);
+
+// particles
+import particleConfig from './emitter.json'
+
+const emitter = new particles.Emitter(
+	particleContainer,
+	particles.upgradeConfig(
+		particleConfig,
+		[PIXI.Texture.from('./assets/particle.png')]
+	)
+)
+
+emitter.autoUpdate = true
+emitter.emit = false
 
 const displacementSprite = PIXI.Sprite.from('https://pixijs.com/assets/pixi-filters/displacement_map_repeat.jpg');
 displacementSprite.texture.baseTexture.wrapMode = PIXI.WRAP_MODES.REPEAT;
@@ -51,7 +72,6 @@ const glowFilter = new GlowFilter({
 	outerStrength: 3,
 })
 // Make sure the sprite is wrapping.
-
 // draw a circle using graphics
 const circle = new Graphics();
 const innerCircle = new Graphics();
@@ -88,10 +108,17 @@ circle.eventMode = 'static';
 circle.cursor = 'pointer';
 
 let growing = gsap.to([circle, innerCircle], {
-	pixi: { scale: GROW_FACTOR, rotation: 60, alpha: 1},
+	pixi: { scale: GROW_FACTOR, rotation: 60, alpha: 1 },
 	duration: 1.5,
 	ease: 'expo.inOut',
 	paused: true,
+	onUpdate: () => {
+		if (growing.progress() > 0.95 && !emitter.emit) {
+			emitter.emit = true
+		} else if (growing.progress() < 0.95 && emitter.emit) {
+			emitter.emit = false
+		}
+	}
 });
 
 
@@ -148,6 +175,7 @@ const load = async () => {
 			container.alpha += 0.005 * delta;
 
 		// randomize the glow filter alpha to show a flickering effect
+		let now = Date.now();
 
 		// Animate the displacement filter
 		displacementSprite.angle += 0.5 * delta;
