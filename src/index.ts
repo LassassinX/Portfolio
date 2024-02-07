@@ -8,7 +8,7 @@ import { MotionBlurFilter } from '@pixi/filter-motion-blur';
 import anime from 'animejs/lib/anime.es.js';
 
 
-import { gsap } from 'gsap';
+import { gsap, wrap } from 'gsap';
 import { RoughEase } from "gsap/EasePack";
 
 
@@ -88,12 +88,16 @@ class Keyboard {
 // init
 // #region
 // make a resizing canvas with pixi
+const canvas = document.querySelector('#gameCanvas') as HTMLCanvasElement
+if (!canvas) throw new Error('Canvas not found')
+
 const app = new PIXI.Application<HTMLCanvasElement>({
 	width: window.innerWidth,
 	height: window.innerHeight,
 	resizeTo: window,
 	antialias: true,
 	hello: true,
+	view: canvas,
 });
 
 app.stage.name = 'mainStage'
@@ -105,6 +109,31 @@ document.body.appendChild(app.view);
 // #endregion
 
 let isGameLoaded = false
+const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.otf', 'Drexs.ttf', 'ElderFuthark.ttf', 'Entanglement.ttf', 'Megatrans.otf', 'Phalang.otf', 'Rexusdemo.ttf', 'SpaceallyIllustrationRegular.ttf', 'Trueno.otf', 'MandatoryPlaything.ttf', 'NeoLatina.ttf', 'Inertia.otf', 'Astrobia.ttf', 'Beon.ttf']
+const colors = {
+	cyan: 0x93edfd,
+}
+
+const selectContainer = (display: PIXI.Container) => {
+	const padding = 20
+	// make a div
+	const container = document.createElement('div')
+	const wrapper = document.createElement('div')
+	wrapper.classList.add('select-wrapper')
+	wrapper.appendChild(container)
+	container.classList.add('select-container')
+
+	container.style.width = display.width + padding + 'px'
+	container.style.height = display.height + padding + 'px'
+
+	wrapper.style.transform = `translate(${display.getGlobalPosition().x - display.width / 2 - padding/2}px, ${display.getGlobalPosition().y - display.height / 2 - padding/2}px)`
+
+	document.body.appendChild(wrapper)
+
+	return () => {
+		container.remove()
+	}
+}
 
 const init = async () => {
 	const loaderBallContainer = new PIXI.Container();
@@ -155,7 +184,7 @@ const init = async () => {
 	app.stage.filters = [displacementFilter];
 
 	const glowFilter = new GlowFilter({
-		color: 0x93edfd,
+		color: colors.cyan,
 		quality: .05,
 		innerStrength: .5,
 		alpha: 0.5,
@@ -202,30 +231,8 @@ const init = async () => {
 
 	innerGlowLoadingCircle.position = outerGlowLoadingCircle.position;
 
-
-	const maskRing = new Graphics()
-	maskRing.lineStyle(0.4, 0xf2541f, 1)
-	maskRing.drawCircle(0, 0, 28)
-	maskRing.position.set(app.screen.width / 2, app.screen.height / 2)
-	maskRing.scale.set(0)
-	maskRing.alpha = 0
-	maskRing.name = 'maskRing'
-	maskRing.filters = [
-		new GlowFilter({
-			color: 0xf2541f,
-			quality: 0.1,
-			innerStrength: 1,
-			alpha: 1,
-			distance: 70,
-			outerStrength: 3,
-		})
-	]
-
-
 	const maskSprite = PIXI.Sprite.from('./assets/blur-filter-texture.png')
-
 	maskSprite.name = 'maskSprite'
-
 	maskSprite.anchor.set(0.5)
 	maskSprite.position.set(app.screen.width / 2, app.screen.height / 2)
 	maskSprite.width = 25
@@ -269,13 +276,13 @@ const init = async () => {
 	});
 
 	let maskSpriteExplosion = gsap.to(maskSprite, {
-		pixi: { width: app.screen.width + 250, height: app.screen.height + 250, alpha: 1 },
+		pixi: { width: app.screen.width + 600, height: app.screen.height + 600, alpha: 1 },
 		duration: 1.5,
 		ease: 'expo.inOut',
 		paused: true,
 	})
 
-	let explosion = gsap.to([outerGlowLoadingCircle, innerGlowLoadingCircle, maskRing], {
+	let explosion = gsap.to([outerGlowLoadingCircle, innerGlowLoadingCircle], {
 		pixi: { scale: 50, alpha: 1 },
 		duration: 2,
 		ease: 'expo.inOut',
@@ -290,19 +297,16 @@ const init = async () => {
 			maskSpriteExplosion.play()
 		},
 		onUpdate: () => {
-			if (explosion.progress() < 0.8) {
+			if (explosion.progress() < .3) {
 				gsap.to(displacementSprite, { pixi: { scale: .5 }, duration: .5, ease: 'sine.inOut' })
 				displacementSprite.angle += 1
 				displacementSprite.x += 1
 			} else {
-				gsap.to(displacementSprite, { pixi: { scale: 5 }, duration: .5, ease: 'sine.inOut' })
+				gsap.to(displacementSprite, { pixi: { scale: 5 }, duration: 5, ease: 'sine.inOut' })
 			}
 		},
 		onComplete: () => {
-			outerGlowLoadingCircle.destroy()
-			innerGlowLoadingCircle.destroy()
-
-			maskRing.destroy()
+			loadGame()
 		}
 	})
 
@@ -407,7 +411,7 @@ const init = async () => {
 	// stars
 	const starColors = [
 		// 0xffffff,
-		0x93edfd,
+		colors.cyan,
 		// 0x7E4CCB,
 		// 0xF37A18,
 		0x04FCFC,
@@ -508,17 +512,85 @@ const init = async () => {
 
 	app.stage.addChild(loaderBallContainer)
 	app.stage.addChild(gameContainer)
-	// app.stage.addChild(maskRing)
 
 
 	gameContainer.addChild(maskSprite)
 
 	gameContainer.mask = maskSprite
 
-	app.ticker.add((delta) => {
-		// maskSprite.scale.set(1 + Math.sin(app.ticker.lastTime / 1000) * 10)
-	})
+	const loadGame = () => {
+		outerGlowLoadingCircle.destroy()
+		innerGlowLoadingCircle.destroy()
 
+		selectContainer(playerContainer)
+
+		// text
+		// PIXI.Assets.load(fontNames.map(x => 'assets/' + x)).then(() => {
+		// // 	const headerFontName = 'Inertia'
+		// // 	const bodyFontName = 'Beon'
+
+		// // 	const headerStyle = new PIXI.TextStyle({
+		// // 		fontFamily: headerFontName,
+		// // 		fontSize: 76,
+		// // 		fill: colors.cyan,
+		// // 	});
+
+		// // 	const bodyStyle = new PIXI.TextStyle({
+		// // 		fontFamily: bodyFontName,
+		// // 		fontSize: 48,
+		// // 		fill: 'white',
+		// // 	});
+
+		// // 	const message = new PIXI.Text('W', headerStyle);
+		// // 	const message2 = new PIXI.Text('Accelerate', bodyStyle);
+		// // 	const message3 = new PIXI.Text('A', headerStyle);
+		// // 	const message4 = new PIXI.Text('Left', bodyStyle);
+
+		// // 	// const texts = makeBackground([[message, message2], [message3, message4]], 0x000000)
+
+		// // 	// playerContainer.addChild(texts);
+		// // 	// texts.position.set(0, 100)
+
+		// // 	// function makeBackground(Lines: PIXI.Text[][], color: number) {
+		// // 	// 	const container = new PIXI.Container()
+		// // 	// 	const textContainer = new Graphics()
+
+		// // 	// 	const bg = new Graphics()
+		// // 	// 	const LINE_HEIGHT = 40
+		// // 	// 	const LINE_WIDTH = 10
+		// // 	// 	let containerWidth = 0
+		// // 	// 	let maxHeight = 0
+		// // 	// 	// lines start from the top
+		// // 	// 	Lines = Lines.map((line, i) => {
+		// // 	// 		let totalWidth = 0;
+		// // 	// 		let totalHeight = 0;
+		// // 	// 		let previousTextWidth = 0
+		// // 	// 		// each line contains a text, that goes side by side
+		// // 	// 		line.forEach((text, j) => {
+		// // 	// 			text.anchor.set(0, 0.5)
+		// // 	// 			text.position.set(j * previousTextWidth + LINE_WIDTH, i * LINE_HEIGHT)
+		// // 	// 			totalWidth += text.width
+		// // 	// 			totalHeight = Math.max(totalHeight, text.height)
+		// // 	// 			previousTextWidth = text.width
+
+		// // 	// 			textContainer.addChild(text)
+		// // 	// 		})
+
+		// // 	// 		containerWidth = Math.max(containerWidth, totalWidth)
+		// // 	// 		maxHeight += totalHeight
+
+		// // 	// 		return line
+		// // 	// 	})
+
+
+
+		// // 	// 	return textContainer
+		// // 	// }
+		// })
+	}
+
+	// player movement
+	// #region
 	app.ticker.add((delta) => {
 		if (!isGameLoaded) return
 
@@ -573,7 +645,6 @@ const init = async () => {
 
 		moveStarsBg(-playerContainer.velX, -playerContainer.velY)
 	})
-
 	const moveStarsBg = (velX: number, velY: number) => {
 		starContainer.children.forEach((star) => {
 			star.x += velX * 0.05 * star.zIndex / 2
@@ -596,22 +667,22 @@ const init = async () => {
 			bgObject.x += velX
 			bgObject.y += velY
 		})
-	}
 
+	}
+	// #endregion
+
+	// displacement filter animation
+	// #region
 	app.ticker.add((delta) => {
-		// Animate the displacement filter
-		// if (!isGameLoaded) {
-			displacementSprite.x += 0.2 * delta;
-			displacementSprite.angle += 0.5 * delta;
-		// }
-		// else
-		// 	displacementSprite.angle += 0.1 * delta;
+		displacementSprite.x += 0.2 * delta;
+		displacementSprite.angle += 0.5 * delta;
 
 		// Reset x to 0 when it's over width to keep values from going to very huge numbers.
 		if (displacementSprite.x > app.screen.width) {
 			displacementSprite.x = 0;
 		}
 	});
+	// #endregion
 }
 
 init()

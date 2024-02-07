@@ -1,3 +1,24 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.select-wrapper { 
+	@apply absolute;
+}
+
+.select-wrapper .select-container { 
+	@apply transition-all border-cyan-400 border-2 rounded-md origin-center;
+	animation: popin 0.5s ease-in-out;
+}
+
+@keyframes popin {
+	0% {
+		transform: scale(0.5);
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
