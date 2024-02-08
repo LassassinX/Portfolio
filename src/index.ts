@@ -44,6 +44,13 @@ const createStar = (x: number, y: number, size: number, color: number) => {
 	star.endFill();
 	return star;
 }
+
+function randChar() {
+	let c = "abcdefghijklmnopqrstuvwxyz1234567890!@#$^&*()…æ_+-=;[]/~`"
+	c = c[Math.floor(Math.random() * c.length)]
+	return (Math.random() > 0.5) ? c : c.toUpperCase()
+}
+
 class Keyboard {
 	value: string
 	isDown: boolean
@@ -83,6 +90,176 @@ class Keyboard {
 		)
 	}
 }
+
+
+const _selectContainer = (display: PIXI.Container, width = true) => {
+	const padding = 20
+
+	// make a div
+	const wrapper = document.createElement('div')
+	const bg = document.createElement('div')
+	const container = document.createElement('div')
+
+	bg.appendChild(container)
+
+	wrapper.classList.add('select-wrapper')
+	wrapper.appendChild(bg)
+
+	bg.classList.add('select-bg')
+	container.classList.add('select-container')
+
+	if (width) {
+		container.style.width = display.width + padding + 'px'
+		container.style.height = display.height + padding + 'px'
+	}
+
+	// wrapper.style.transform = `translate(${display.getGlobalPosition().x - display.width / 2 - padding / 2}px, ${display.getGlobalPosition().y - display.height / 2 - padding / 2}px)`
+
+	return { wrapper, container, bg }
+}
+
+const _selectTextContainer = (display: PIXI.Container, texts: string[]) => {
+	// make a select container 
+	const { wrapper, container, bg } = _selectContainer(display, false);
+	bg.classList.add('text-bg')
+
+
+	const textContainer = document.createElement('div')
+	textContainer.classList.add('text-container')
+
+	texts.forEach(text => {
+		const div = document.createElement('div')
+		div.classList.add('text')
+		div.innerHTML = text
+		textContainer.appendChild(div)
+	})
+
+	container.appendChild(textContainer)
+
+
+	return {
+		wrapper,
+		textContainer,
+		container,
+		bg,
+	}
+}
+
+const spawnTexts = (display: PIXI.Container, texts: string[]) => {
+	const parent = document.createElement('div')
+	parent.classList.add('select-parent')
+
+	const padding = 20
+	const { wrapper: displayContainerWrapper, container: displayContainer } = _selectContainer(display)
+	const { wrapper: textContainerWrapper, container: textContainer } = _selectTextContainer(display, texts)
+
+	const offsetX = 25 + display.width
+	const offsetY = 0
+
+	textContainerWrapper.style.transform = `translate(${offsetX}px, ${offsetY}px)`
+
+	parent.appendChild(displayContainerWrapper)
+	parent.appendChild(textContainerWrapper)
+
+	app.ticker.add(() => {
+		parent.style.transform = `translate(${display.getGlobalPosition().x - padding / 2 - display.width / 2}px, ${display.getGlobalPosition().y - display.height / 2 - padding / 2}px)`
+	})
+
+	displayContainerWrapper.style.opacity = '0'
+	displayContainer.style.width = '0'
+	displayContainer.style.height = '0'
+
+	textContainerWrapper.style.opacity = '0'
+	textContainer.style.width = '0'
+	textContainer.style.height = '0'
+	document.body.appendChild(parent)
+	const w = display.width + padding + 'px'
+	const h = display.height + padding + 'px'
+	// gsap animation
+	// timeline
+	const tl = gsap.timeline()
+	tl.to(displayContainerWrapper, {
+		opacity: 1,
+		duration: 0.4,
+	})
+
+
+	tl.to(displayContainer, {
+		width: w,
+		height: 0,
+		duration: 0.3,
+		ease: 'circ.inOut',
+	}, '>-0.05')
+
+	tl.to(textContainerWrapper, {
+		opacity: 1,
+		duration: 0.4,
+	}, '>-0.3')
+
+	tl.to(displayContainer, {
+		height: h,
+		duration: 0.3,
+		ease: 'circ.inOut',
+	}, '>-0.05')
+
+	tl.to(textContainer, {
+		width: 'auto',
+		height: 0,
+		duration: 0.3,
+		ease: 'circ.inOut',
+
+		onComplete: () => {
+			textContainer.querySelectorAll('[data-text]').forEach((t, i) => {
+				textDecodeAnimation(t as HTMLElement, {
+					duration: 1,
+				})
+			})
+		}
+	}, '>-0.05')
+
+	tl.to(textContainer, {
+		height: 'auto',
+		duration: 0.3,
+		ease: 'circ.inOut',
+	}, '>-0.05')
+
+
+	return () => {
+		tl.reverse().then(() => {
+			parent.remove()
+		})
+	}
+}
+
+const textDecodeAnimation = (t: HTMLElement, { duration, delay}: {
+	duration?: number,
+	delay?: number
+}) => {
+	const arr1 = t.innerHTML.split('')
+	const arr2: string[] = []
+	duration = duration || arr1.length / 20
+	delay = delay || 0
+	arr1.forEach((char, i) => arr2[i] = randChar()) //fill arr2 with random characters
+	const tl = gsap.timeline()
+	let step = 0
+	tl.fromTo(t, {
+		innerHTML: arr2.join(''),
+	}, {
+		duration,
+		ease: 'power4.in',
+		delay: 0.05,
+		onUpdate: () => {
+			const p = Math.floor(tl.progress() * (arr1.length)) //whole number from 0 - text length
+			if (step != p) { //throttle the change of random characters
+				step = p
+				arr1.forEach((char, i) => arr2[i] = randChar())
+				let pt1 = arr1.join('').substring(p, 0),
+					pt2 = arr2.join('').substring(arr2.length - p, 0)
+				t.innerHTML = pt1 + pt2 //update text
+			}
+		}
+	})
+}
 // #endregion
 
 // init
@@ -111,27 +288,10 @@ document.body.appendChild(app.view);
 let isGameLoaded = false
 const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.otf', 'Drexs.ttf', 'ElderFuthark.ttf', 'Entanglement.ttf', 'Megatrans.otf', 'Phalang.otf', 'Rexusdemo.ttf', 'SpaceallyIllustrationRegular.ttf', 'Trueno.otf', 'MandatoryPlaything.ttf', 'NeoLatina.ttf', 'Inertia.otf', 'Astrobia.ttf', 'Beon.ttf']
 const colors = {
-	cyan: 0x93edfd,
-}
-
-const selectContainer = (display: PIXI.Container) => {
-	const padding = 20
-	// make a div
-	const container = document.createElement('div')
-	const wrapper = document.createElement('div')
-	wrapper.classList.add('select-wrapper')
-	wrapper.appendChild(container)
-	container.classList.add('select-container')
-
-	container.style.width = display.width + padding + 'px'
-	container.style.height = display.height + padding + 'px'
-
-	wrapper.style.transform = `translate(${display.getGlobalPosition().x - display.width / 2 - padding/2}px, ${display.getGlobalPosition().y - display.height / 2 - padding/2}px)`
-
-	document.body.appendChild(wrapper)
-
-	return () => {
-		container.remove()
+	"cyan": 0x93edfd,
+	"cyan-400": 0x22d3ee,
+	toString: (color: number) => {
+		return `#${color.toString(16)}`
 	}
 }
 
@@ -330,6 +490,8 @@ const init = async () => {
 	outerGlowLoadingCircle.on('mousedown', () => {
 		// explode the circle
 		explosion.play()
+		ballContainer.cursor = 'default'
+		ballContainer.eventMode = 'none'
 	})
 
 	// make the circle glow outwards
@@ -522,78 +684,38 @@ const init = async () => {
 		outerGlowLoadingCircle.destroy()
 		innerGlowLoadingCircle.destroy()
 
-		selectContainer(playerContainer)
+		const cleanup = spawnTexts(playerContainer, [
+			`<div class="grid grid-cols-[1fr_1fr] gap-x-4 gap-y-6 items-center text-white text-lg">
+				<p class="corner-border-small text-cyan-400 font-header font-bold flex items-center justify-center !p-[2px_6px]">W</p>
+				<p data-text="true" class="font-body">Accelerate</p>
+				<p class="corner-border-small text-cyan-400 font-header font-bold flex items-center justify-center !p-[2px_6px]">S</p>
+				<p data-text="true" class="font-body">Decelerate</p>
+				<p class="corner-border-small text-cyan-400 font-header font-bold flex items-center justify-center !p-[2px_6px]">A</p>
+				<p data-text="true" class="font-body">Rotate Left</p>
+				<p class="corner-border-small text-cyan-400 font-header font-bold flex items-center justify-center !p-[2px_6px]">D</p>
+				<p data-text="true" class="font-body">Rotate Right</p>
+			</div>
+			`]
+		)
 
-		// text
-		// PIXI.Assets.load(fontNames.map(x => 'assets/' + x)).then(() => {
-		// // 	const headerFontName = 'Inertia'
-		// // 	const bodyFontName = 'Beon'
+		let x: NodeJS.Timeout | undefined
 
-		// // 	const headerStyle = new PIXI.TextStyle({
-		// // 		fontFamily: headerFontName,
-		// // 		fontSize: 76,
-		// // 		fill: colors.cyan,
-		// // 	});
+		let y = () => {
+			if (w.isDown) {
+				if (!x)
+					x = setTimeout(() => {
+						cleanup()
+						app.ticker.remove(y)
+					}, 3000)
+			}
+		}
 
-		// // 	const bodyStyle = new PIXI.TextStyle({
-		// // 		fontFamily: bodyFontName,
-		// // 		fontSize: 48,
-		// // 		fill: 'white',
-		// // 	});
-
-		// // 	const message = new PIXI.Text('W', headerStyle);
-		// // 	const message2 = new PIXI.Text('Accelerate', bodyStyle);
-		// // 	const message3 = new PIXI.Text('A', headerStyle);
-		// // 	const message4 = new PIXI.Text('Left', bodyStyle);
-
-		// // 	// const texts = makeBackground([[message, message2], [message3, message4]], 0x000000)
-
-		// // 	// playerContainer.addChild(texts);
-		// // 	// texts.position.set(0, 100)
-
-		// // 	// function makeBackground(Lines: PIXI.Text[][], color: number) {
-		// // 	// 	const container = new PIXI.Container()
-		// // 	// 	const textContainer = new Graphics()
-
-		// // 	// 	const bg = new Graphics()
-		// // 	// 	const LINE_HEIGHT = 40
-		// // 	// 	const LINE_WIDTH = 10
-		// // 	// 	let containerWidth = 0
-		// // 	// 	let maxHeight = 0
-		// // 	// 	// lines start from the top
-		// // 	// 	Lines = Lines.map((line, i) => {
-		// // 	// 		let totalWidth = 0;
-		// // 	// 		let totalHeight = 0;
-		// // 	// 		let previousTextWidth = 0
-		// // 	// 		// each line contains a text, that goes side by side
-		// // 	// 		line.forEach((text, j) => {
-		// // 	// 			text.anchor.set(0, 0.5)
-		// // 	// 			text.position.set(j * previousTextWidth + LINE_WIDTH, i * LINE_HEIGHT)
-		// // 	// 			totalWidth += text.width
-		// // 	// 			totalHeight = Math.max(totalHeight, text.height)
-		// // 	// 			previousTextWidth = text.width
-
-		// // 	// 			textContainer.addChild(text)
-		// // 	// 		})
-
-		// // 	// 		containerWidth = Math.max(containerWidth, totalWidth)
-		// // 	// 		maxHeight += totalHeight
-
-		// // 	// 		return line
-		// // 	// 	})
-
-
-
-		// // 	// 	return textContainer
-		// // 	// }
-		// })
+		app.ticker.add(y)
 	}
 
 	// player movement
 	// #region
 	app.ticker.add((delta) => {
-		if (!isGameLoaded) return
-
 		let acceleration = 0.05 * delta
 		// Set your desired maximum speeds for forward and reverse
 		const maxForwardSpeed = 4;
@@ -667,7 +789,6 @@ const init = async () => {
 			bgObject.x += velX
 			bgObject.y += velY
 		})
-
 	}
 	// #endregion
 
