@@ -31,7 +31,7 @@ I am not sure who will find this. This is my digital diary. A record of my thoug
 
 As a wanderer of the digital world I navigate as a Full Stack Developer aspiring to manifest my imagination and creativity. My ambition for creating visuals beyond this realm knows no bounds. Despite wielding a formidable arsenal of cutting-edge technologies like [NextJS], [ReactJS], [PixiJS], [Java SpringBoot] and more, I remain on a quest to transcend my own limitiations, aspiring to be the pixel wizard that I dream of... Trying my best to capture the beauty of the stars.
 
-I boarded the spaceship Earth[340] on 12/12/2350. I was on a mission to the Andro${Array.from({length: 5}, randChar).join('')} ${Array.from({length: 8}, randChar).join('')} ${Array.from({length: 5}, randChar).join('')} ${Array.from({length: 8}, randChar).join('')}.....>>><<>>>>
+I boarded the spaceship Earth[340] on 12/12/2350. I was on a mission to the Andro${Array.from({ length: 5 }, randChar).join('')} ${Array.from({ length: 8 }, randChar).join('')} ${Array.from({ length: 5 }, randChar).join('')} ${Array.from({ length: 8 }, randChar).join('')}.....>>><<>>>>
 
 ...DROPPED CONNECTION...`,
 }
@@ -371,18 +371,19 @@ const textDecodeAnimationPixijs = (t: PIXI.Text, { duration, delay, updateDelay,
 	updateDelay?: number,
 	finalTint?: number
 }) => {
-	const targetText = t.text
-	const targetTextArr = targetText.split(' ')
-	const jarbledTextArr = targetTextArr.map((x) => {
-		const arr = x.split('')
-		arr.forEach((char, i) => arr[i] = randChar())
-		return arr.join('')
-	})
+	const targetText = t.text;
+	const targetTextArr = targetText.split('\n'); // Split the text based on newline characters
+	const jarbledTextArr = targetTextArr.map(line => {
+		const words = line.split(' ');
+		const jarbledWords = words.map(word => word.split('').map(randChar).join(''));
+		return jarbledWords.join(' ');
+	});
 
-	const jarbledText = jarbledTextArr.join(' ')
+	let jarbledText = jarbledTextArr.join('\n'); // Join the lines back together with newline characters
 
 	// lets jarble the text
 	t.text = jarbledText
+
 	// get current time
 	let start = Date.now()
 	const anim = gsap.to(t, {
@@ -396,7 +397,13 @@ const textDecodeAnimationPixijs = (t: PIXI.Text, { duration, delay, updateDelay,
 			if (Date.now() - start > (updateDelay || 0)) {
 				// debounce the change of random characters
 				const p = anim.progress() * targetText.length
-				t.text = targetText.substring(0, p) + jarbledText.substring(0, jarbledText.length - p)
+				t.text = targetText.substring(0, p) + jarbledText.substring(p)
+				jarbledText = jarbledTextArr.map(line => {
+					const words = line.split(' ');
+					const jarbledWords = words.map(word => word.split('').map(randChar).join(''));
+					return jarbledWords.join(' ');
+				}).join('\n');
+
 				// reset the start time
 				start = Date.now()
 
@@ -438,7 +445,7 @@ document.body.appendChild(app.view);
 // #endregion
 
 let isGameLoaded = false
-const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.otf', 'Drexs.ttf', 'ElderFuthark.ttf', 'Entanglement.ttf', 'Megatrans.otf', 'Phalang.otf', 'Rexusdemo.ttf', 'SpaceallyIllustrationRegular.ttf', 'Trueno.otf', 'MandatoryPlaything.ttf', 'NeoLatina.ttf', 'Inertia.otf', 'Astrobia.ttf', 'Beon.ttf', 'CPMono_Black.otf', 'CPMono_Bold.otf', 'CPMono_Light.otf','CPMono_ExtraLight.otf', 'CPMono_Plain.otf']
+const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.otf', 'Drexs.ttf', 'ElderFuthark.ttf', 'Entanglement.ttf', 'Megatrans.otf', 'Phalang.otf', 'Rexusdemo.ttf', 'SpaceallyIllustrationRegular.ttf', 'Trueno.otf', 'MandatoryPlaything.ttf', 'NeoLatina.ttf', 'Inertia.otf', 'Astrobia.ttf', 'Beon.ttf', 'CPMono_Black.otf', 'CPMono_Bold.otf', 'CPMono_Light.otf', 'CPMono_ExtraLight.otf', 'CPMono_Plain.otf']
 const colors = {
 	cyan: 0x93edfd,
 	cyanBright: 0x22d3ee,
@@ -448,6 +455,9 @@ const colors = {
 		return `#${color.toString(16)}`
 	}
 }
+
+const headerFont = 'MandatoryPlaything'
+const bodyFont = 'CPMono_Light'
 
 const init = async () => {
 	await PIXI.Assets.load(fontNames.map(font => `./assets/${font}`))
@@ -841,7 +851,7 @@ const init = async () => {
 	const padding = 40
 	const aboutMeTitleText = new PIXI.Text(
 		'About Me', {
-		fontFamily: 'MandatoryPlaything',
+		fontFamily: headerFont,
 		fontSize: 32,
 		align: 'left',
 		fill: colors.cyanBright,
@@ -851,13 +861,13 @@ const init = async () => {
 
 	const aboutMeBodyText = new PIXI.Text(
 		TEXTS.aboutMe, {
-		fontFamily: 'CPMono_Light',
+		fontFamily: bodyFont,
 		fontSize: 22,
 		align: 'left',
 		fill: 0xffffff,
 		padding: 20,
 		wordWrap: true,
-		wordWrapWidth: 700,
+		wordWrapWidth: 750,
 	})
 
 	aboutMeBodyText.position.set(padding / 2, padding / 2)
@@ -921,6 +931,7 @@ const init = async () => {
 		{ name: 'Github', link: `` },
 		{ name: 'Linkedin', link: `` },
 		{ name: 'Facebook', link: `` },
+		{ name: 'Resume/CV', link: `` },
 	]
 
 	const socialsContainer = new PIXI.Container()
@@ -929,13 +940,13 @@ const init = async () => {
 	let prevSocial: PIXI.Container | undefined
 	let socialAnimations: gsap.core.Tween[] = []
 	socials.forEach((social, i) => {
-		let padding = 10
+		let padding = 20
 		let gap = 20
 		const socialContainer = new PIXI.Container()
 		const text = new PIXI.Text(
 			social.name, {
-			fontFamily: 'NeoLatina',
-			fontSize: 26,
+			fontFamily: bodyFont,
+			fontSize: 18,
 			align: 'left',
 			fill: 0xffffff,
 		})
@@ -977,7 +988,7 @@ const init = async () => {
 		socialContainer.position.set(prevSocial ? prevSocial.x + prevSocial.width + gap : 0, 0)
 		prevSocial = socialContainer
 
-		socialAnimations.push(textDecodeAnimationPixijs(text, { duration: 1, updateDelay: 1, finalTint: colors.cyanBright}))
+		socialAnimations.push(textDecodeAnimationPixijs(text, { duration: 1, updateDelay: 1, finalTint: colors.cyanBright }))
 		socialContainer.eventMode = 'static'
 		socialContainer.on('mouseenter', () => {
 			if (isDecoded && socialAnimations[i].progress() === 1) {
@@ -1040,9 +1051,7 @@ const init = async () => {
 
 				if (!x)
 					x = spawnTexts(playerContainer, [`
-					<div class="flex flex-col gap-1">
-						<div class="flex items-center gap-2 text-white font-header text-lg">Press <span class="text-cyan-400 corner-border-small font-bold !p-[1px_7px]">F</span> to decode</div>
-					</div>
+						<div class="flex items-center gap-2 text-white font-body text-lg">press <span class="text-cyan-400 corner-border-small font-bold font-header !p-[1px_7px]">F</span> to decode_</div>
 					`], false)
 			} else {
 				if (x) {
@@ -1055,7 +1064,7 @@ const init = async () => {
 	}
 
 	// animate the about me section
-	const decodeBodyText = textDecodeAnimationPixijs(aboutMeBodyText, { duration: 5, updateDelay: 120, finalTint: colors.green})
+	const decodeBodyText = textDecodeAnimationPixijs(aboutMeBodyText, { duration: 5, updateDelay: 40, finalTint: colors.green })
 	const decodeAboutMe = (e: KeyboardEvent) => {
 		if (e.key.toLocaleLowerCase() === 'f' && isInRange) {
 			isDecoded = true
