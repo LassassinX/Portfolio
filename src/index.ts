@@ -2,9 +2,10 @@ import './style.css';
 import * as PIXI from 'pixi.js';
 import * as particles from '@pixi/particle-emitter'
 import { SmoothGraphics as Graphics } from '@pixi/graphics-smooth';
+import { Layout } from '@pixi/layout';
 import { GlowFilter } from '@pixi/filter-glow';
 import { MotionBlurFilter } from '@pixi/filter-motion-blur';
-
+import _ from 'lodash';
 import anime from 'animejs/lib/anime.es.js';
 
 
@@ -24,15 +25,104 @@ gsap.registerPlugin(PixiPlugin);
 // give the plugin a reference to the PIXI object
 PixiPlugin.registerPIXI(PIXI);
 
+// texts
+const TEXTS = {
+	aboutMe: `I'm a full-stack developer with a passion for creating beautiful and functional web applications. I have experience in building web applications using modern technologies such as React, Node.js, and MongoDB. I'm also familiar with cloud platforms such as AWS and Azure. I'm always eager to learn new technologies and improve my skills. I'm currently looking for new opportunities to work on exciting projects and grow as a developer. I'm a full-stack developer with a passion for creating beautiful and functional web applications. I have experience in building web applications using modern technologies such as React, Node.js, and MongoDB. I'm also familiar with cloud platforms such as AWS and Azure. I'm always eager to learn new technologies and improve my skills. I'm currently looking for new opportunities to work on exciting projects and grow as a developer. I'm a full-stack developer with a passion for creating beautiful and functional web applications. I have experience in building web applications using modern technologies such as React, Node.js, and MongoDB. I'm also familiar with cloud platforms such as AWS and Azure. I'm always eager to learn new technologies and improve my skills. I'm currently looking for new opportunities to work on exciting projects and grow as a developer. I'm a full-stack developer with a passion for creating beautiful and functional web applications.`,
+}
+
 // functions
 // #region
 const randomFromRange = (min: number, max: number) => Math.random() * (max - min) + min;
 const randomFromArray = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
 
+const checkCollision = (a: PIXI.Container, b: PIXI.Container, padding: number) => {
+	const aBounds = a.getBounds()
+	const bBounds = b.getBounds()
+	return aBounds.x + aBounds.width + padding > bBounds.x &&
+		aBounds.x < bBounds.x + bBounds.width + padding &&
+		aBounds.y + aBounds.height + padding > bBounds.y &&
+		aBounds.y < bBounds.y + bBounds.height + padding
+}
+
 const getDistance = (a: PIXI.Container, b: PIXI.Container) => {
 	const dx = a.getGlobalPosition().x - b.getGlobalPosition().x
 	const dy = a.getGlobalPosition().y - b.getGlobalPosition().y
 	return Math.sqrt(dx * dx + dy * dy)
+}
+
+const makeRect = ({
+	width,
+	height,
+	color,
+	alpha,
+	cornerSize = 10,
+	cornerThickness = 2,
+	borderThickness = 0,
+	borderColor = 0x000000,
+}: {
+	width: number,
+	height: number,
+	alpha: number,
+	color?: number,
+	cornerSize?: number,
+	cornerThickness?: number,
+	borderThickness?: number,
+	borderColor?: number,
+}) => {
+	// add a background
+	const bg = new PIXI.Graphics()
+	if (alpha) {
+		bg.beginFill(color, alpha)
+		bg.drawRect(0, 0, width, height)
+		bg.endFill()
+	}
+
+	if (borderThickness) {
+		bg.lineStyle(borderThickness, borderColor, 1)
+		bg.drawRect(0, 0, width, height)
+
+		return bg
+	}
+
+	// add 4 corners to the bg
+	const corners = [
+		{ x: 0, y: 0 },
+		{ x: width, y: 0 },
+		{ x: 0, y: height },
+		{ x: width, y: height },
+	]
+
+	corners.forEach((corner, i) => {
+		const cornerG = new PIXI.Graphics()
+		// lines
+		cornerG.lineStyle(cornerThickness, colors.cyanBright, 1)
+
+		// draw a corner, check
+		if (i === 0) {
+			cornerG.moveTo(corner.x, corner.y + cornerSize)
+			cornerG.lineTo(corner.x, corner.y)
+			cornerG.lineTo(corner.x + cornerSize, corner.y)
+		}
+		if (i === 1) {
+			cornerG.moveTo(corner.x, corner.y + cornerSize)
+			cornerG.lineTo(corner.x, corner.y)
+			cornerG.lineTo(corner.x - cornerSize, corner.y)
+		}
+		if (i === 2) {
+			cornerG.moveTo(corner.x, corner.y - cornerSize)
+			cornerG.lineTo(corner.x, corner.y)
+			cornerG.lineTo(corner.x + cornerSize, corner.y)
+		}
+		if (i === 3) {
+			cornerG.moveTo(corner.x, corner.y - cornerSize)
+			cornerG.lineTo(corner.x, corner.y)
+			cornerG.lineTo(corner.x - cornerSize, corner.y)
+		}
+
+		bg.addChild(cornerG)
+	})
+
+	return bg
 }
 
 // lets make a single star
@@ -145,7 +235,7 @@ const _selectTextContainer = (display: PIXI.Container, texts: string[]) => {
 	}
 }
 
-const spawnTexts = (display: PIXI.Container, texts: string[]) => {
+const spawnTexts = (display: PIXI.Container, texts: string[], select: boolean = true) => {
 	const parent = document.createElement('div')
 	parent.classList.add('select-parent')
 
@@ -158,7 +248,9 @@ const spawnTexts = (display: PIXI.Container, texts: string[]) => {
 
 	textContainerWrapper.style.transform = `translate(${offsetX}px, ${offsetY}px)`
 
-	parent.appendChild(displayContainerWrapper)
+	if (select)
+		parent.appendChild(displayContainerWrapper)
+
 	parent.appendChild(textContainerWrapper)
 
 	app.ticker.add(() => {
@@ -178,29 +270,32 @@ const spawnTexts = (display: PIXI.Container, texts: string[]) => {
 	// gsap animation
 	// timeline
 	const tl = gsap.timeline()
-	tl.to(displayContainerWrapper, {
-		opacity: 1,
-		duration: 0.4,
-	})
+	if (select) {
+		tl.to(displayContainerWrapper, {
+			opacity: 1,
+			duration: 0.4,
+		})
 
 
-	tl.to(displayContainer, {
-		width: w,
-		height: 0,
-		duration: 0.3,
-		ease: 'circ.inOut',
-	}, '>-0.05')
+		tl.to(displayContainer, {
+			width: w,
+			height: 0,
+			duration: 0.3,
+			ease: 'circ.inOut',
+		}, '>-0.05')
+	}
 
 	tl.to(textContainerWrapper, {
 		opacity: 1,
 		duration: 0.4,
-	}, '>-0.3')
+	}, select ? '>-0.3' : '')
 
-	tl.to(displayContainer, {
-		height: h,
-		duration: 0.3,
-		ease: 'circ.inOut',
-	}, '>-0.05')
+	if (select)
+		tl.to(displayContainer, {
+			height: h,
+			duration: 0.3,
+			ease: 'circ.inOut',
+		}, '>-0.05')
 
 	tl.to(textContainer, {
 		width: 'auto',
@@ -210,7 +305,7 @@ const spawnTexts = (display: PIXI.Container, texts: string[]) => {
 
 		onComplete: () => {
 			textContainer.querySelectorAll('[data-text]').forEach((t, i) => {
-				textDecodeAnimation(t as HTMLElement, {
+				textDecodeAnimationHTML(t as HTMLElement, {
 					duration: 1,
 				})
 			})
@@ -226,12 +321,15 @@ const spawnTexts = (display: PIXI.Container, texts: string[]) => {
 
 	return () => {
 		tl.reverse().then(() => {
+			textContainerWrapper.style.opacity = '0'
+			displayContainerWrapper.style.opacity = '0'
+
 			parent.remove()
 		})
 	}
 }
 
-const textDecodeAnimation = (t: HTMLElement, { duration, delay}: {
+const textDecodeAnimationHTML = (t: HTMLElement, { duration, delay }: {
 	duration?: number,
 	delay?: number
 }) => {
@@ -260,6 +358,54 @@ const textDecodeAnimation = (t: HTMLElement, { duration, delay}: {
 		}
 	})
 }
+
+const textDecodeAnimationPixijs = (t: PIXI.Text, { duration, delay, updateDelay, finalTint }: {
+	duration?: number,
+	delay?: number,
+	updateDelay?: number,
+	finalTint?: number
+}) => {
+	const targetText = t.text
+	const targetTextArr = targetText.split(' ')
+	const jarbledTextArr = targetTextArr.map((x) => {
+		const arr = x.split('')
+		arr.forEach((char, i) => arr[i] = randChar())
+		return arr.join('')
+	})
+
+	const jarbledText = jarbledTextArr.join(' ')
+
+	// lets jarble the text
+	t.text = jarbledText
+	// get current time
+	let start = Date.now()
+	const anim = gsap.to(t, {
+		pixi: {
+			tint: finalTint ? finalTint : 0xFFFFFF
+		},
+		duration,
+		delay,
+		paused: true,
+		onUpdate: () => {
+			if (Date.now() - start > (updateDelay || 0)) {
+				// debounce the change of random characters
+				const p = anim.progress() * targetText.length
+				t.text = targetText.substring(0, p) + jarbledText.substring(0, jarbledText.length - p)
+				// reset the start time
+				start = Date.now()
+
+				// tint the text
+			}
+		},
+
+		onComplete: () => {
+			t.text = targetText
+		}
+	})
+
+	return anim
+}
+
 // #endregion
 
 // init
@@ -288,14 +434,16 @@ document.body.appendChild(app.view);
 let isGameLoaded = false
 const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.otf', 'Drexs.ttf', 'ElderFuthark.ttf', 'Entanglement.ttf', 'Megatrans.otf', 'Phalang.otf', 'Rexusdemo.ttf', 'SpaceallyIllustrationRegular.ttf', 'Trueno.otf', 'MandatoryPlaything.ttf', 'NeoLatina.ttf', 'Inertia.otf', 'Astrobia.ttf', 'Beon.ttf']
 const colors = {
-	"cyan": 0x93edfd,
-	"cyan-400": 0x22d3ee,
+	cyan: 0x93edfd,
+	cyanBright: 0x22d3ee,
 	toString: (color: number) => {
 		return `#${color.toString(16)}`
 	}
 }
 
 const init = async () => {
+	await PIXI.Assets.load(fontNames.map(font => `./assets/${font}`))
+
 	const loaderBallContainer = new PIXI.Container();
 	loaderBallContainer.name = 'loaderBallContainer'
 
@@ -574,6 +722,7 @@ const init = async () => {
 	const starColors = [
 		// 0xffffff,
 		colors.cyan,
+		// colors.cyanBright,
 		// 0x7E4CCB,
 		// 0xF37A18,
 		0x04FCFC,
@@ -618,14 +767,6 @@ const init = async () => {
 	const bgObjectsContainer = new PIXI.Container()
 	bgObjectsContainer.name = 'bgObjects'
 	bgObjectsContainer.position.set(app.screen.width / 2, app.screen.height / 2)
-
-	// add a circle to bgObjects
-	const bgCircle = new Graphics()
-	bgCircle.beginFill(0xff33ef, 1, true)
-	bgCircle.drawCircle(250, 600, 100)
-	bgCircle.endFill()
-	bgCircle.position.set(0, 0)
-	bgObjectsContainer.addChild(bgCircle)
 
 	// player
 	const w = new Keyboard('w')
@@ -679,12 +820,268 @@ const init = async () => {
 	gameContainer.addChild(maskSprite)
 
 	gameContainer.mask = maskSprite
+	let playerTutorialCleanupFunction: () => void
+
+	// sections
+
+	// sections
+	// about me section
+	// #region
+	const aboutMeContainer = new PIXI.Container()
+	aboutMeContainer.name = 'aboutMeContainer'
+
+	const padding = 40
+	const aboutMeTitleText = new PIXI.Text(
+		'About Me', {
+		fontFamily: 'MandatoryPlaything',
+		fontSize: 32,
+		align: 'left',
+		fill: colors.cyanBright,
+		wordWrap: true,
+		wordWrapWidth: 700,
+	})
+
+	const aboutMeBodyText = new PIXI.Text(
+		TEXTS.aboutMe, {
+		fontFamily: 'NeoLatina',
+		fontSize: 26,
+		align: 'left',
+		fill: 0xffffff,
+		padding: 20,
+		wordWrap: true,
+		wordWrapWidth: 700,
+	})
+
+	aboutMeBodyText.position.set(padding / 2, padding / 2)
+
+	const bodyBg = makeRect({
+		width: aboutMeBodyText.width + padding,
+		height: aboutMeBodyText.height + padding,
+		color: 0x000000,
+		alpha: 0.5,
+		cornerSize: 15,
+		cornerThickness: 3,
+	})
+
+	const bodyBgMask = makeRect({
+		width: aboutMeBodyText.width,
+		height: aboutMeBodyText.height,
+		color: 0xffffff,
+		alpha: 1,
+	})
+
+	bodyBgMask.position.set(padding / 2, padding / 2)
+
+	aboutMeBodyText.mask = bodyBgMask
+
+	const titleBg = makeRect({
+		width: aboutMeBodyText.width + padding,
+		height: 140 + padding,
+		color: 0x000000,
+		alpha: 0.5,
+		cornerSize: 15,
+		cornerThickness: 3,
+	})
+
+	// make a picture square of 140
+	const pictureSquare = makeRect({
+		width: 140,
+		height: 140,
+		alpha: 0,
+		borderThickness: 2,
+		borderColor: colors.cyanBright,
+	})
+
+
+	pictureSquare.position.set(padding / 2, padding / 2)
+
+	// load the question mark
+	const questionMark = PIXI.Sprite.from('./assets/question.png')
+	questionMark.width = 100
+	questionMark.height = 100
+	pictureSquare.addChild(questionMark)
+	questionMark.position.set(padding / 2, padding / 2)
+
+	const line = new Graphics().lineStyle(2, colors.cyanBright, 1).moveTo(0, 0).lineTo(0, titleBg.height)
+	line.position.set(pictureSquare.x + pictureSquare.width + padding / 2, 0)
+
+	const headerContainer = new PIXI.Container()
+	aboutMeTitleText.position.set(line.x + line.width + padding / 2, padding / 2)
+
+	// socials 
+	const socials = [
+		{ name: 'Github', link: `` },
+		{ name: 'Linkedin', link: `` },
+		{ name: 'Facebook', link: `` },
+	]
+
+	const socialsContainer = new PIXI.Container()
+	socialsContainer.name = 'socialsContainer'
+
+	let prevSocial: PIXI.Container | undefined
+	let socialAnimations: gsap.core.Tween[] = []
+	socials.forEach((social, i) => {
+		let padding = 10
+		let gap = 20
+		const socialContainer = new PIXI.Container()
+		const text = new PIXI.Text(
+			social.name, {
+			fontFamily: 'NeoLatina',
+			fontSize: 26,
+			align: 'left',
+			fill: 0xffffff,
+		})
+
+		const bg = makeRect({
+			width: text.width + padding,
+			height: text.height + padding,
+			alpha: 0,
+			cornerSize: 25,
+			cornerThickness: 1,
+		})
+
+		const bg2 = makeRect({
+			width: text.width + padding,
+			height: text.height + padding,
+			alpha: 0,
+			borderThickness: 1,
+			borderColor: colors.cyanBright,
+		})
+
+		bg2.alpha = 0
+		const bgMask = makeRect({
+			width: text.width,
+			height: text.height,
+			color: 0xffffff,
+			alpha: 1,
+		})
+
+		text.position.set(padding / 2, padding / 2)
+		bgMask.position.set(padding / 2, padding / 2)
+
+		text.mask = bgMask
+		bg.position.set(0, 0)
+
+		socialContainer.addChild(bg)
+		socialContainer.addChild(bg2)
+		socialContainer.addChild(bgMask)
+		socialContainer.addChild(text)
+		socialContainer.position.set(prevSocial ? prevSocial.x + prevSocial.width + gap : 0, 0)
+		prevSocial = socialContainer
+
+		socialAnimations.push(textDecodeAnimationPixijs(text, { duration: 1, updateDelay: 1, finalTint: colors.cyanBright}))
+		socialContainer.eventMode = 'static'
+		socialContainer.on('mouseenter', () => {
+			if (isDecoded && socialAnimations[i].progress() === 1) {
+				socialContainer.cursor = 'pointer'
+			}
+
+			if (socialAnimations[i].progress() === 1)
+				gsap.to(bg2, { pixi: { alpha: 1 }, duration: 0.2, ease: 'sine.inOut' })
+		})
+		socialContainer.on('mouseleave', () => {
+			if (socialAnimations[i].progress() === 1)
+				gsap.to(bg2, { pixi: { alpha: 0 }, duration: 0.2, ease: 'sine.inOut' })
+		})
+
+		socialContainer.on('mousedown', () => {
+			if (isDecoded && socialAnimations[i].progress() === 1) {
+				window.open(social.link, '_blank')
+			}
+		})
+		socialsContainer.addChild(socialContainer)
+	})
+
+	socialsContainer.position.set(aboutMeTitleText.x, titleBg.height - socialsContainer.height - padding / 2)
+	headerContainer.addChild(titleBg)
+	headerContainer.addChild(line)
+	headerContainer.addChild(pictureSquare)
+	headerContainer.addChild(aboutMeTitleText)
+	headerContainer.addChild(socialsContainer)
+
+	const bodyContainer = new PIXI.Container()
+	bodyContainer.addChild(bodyBg)
+	bodyContainer.addChild(bodyBgMask)
+	bodyContainer.addChild(aboutMeBodyText)
+	bodyContainer.position.set(0, titleBg.height + padding / 2)
+
+	aboutMeContainer.addChild(headerContainer)
+	aboutMeContainer.addChild(bodyContainer)
+
+	aboutMeContainer.position.set(-1500, -500)
+	bgObjectsContainer.addChild(aboutMeContainer)
+
+	// check if player is near the about me section
+	let isInRange = false
+	let isDecoded = false
+	{
+		let x: (() => void) | undefined
+		const playerDecoder = () => {
+			isInRange = checkCollision(playerContainer, aboutMeContainer, 200)
+			if (isDecoded) {
+				if (x) {
+					x()
+					x = undefined
+				}
+				app.ticker.remove(playerDecoder)
+				return
+			}
+			if (isInRange) {
+				if (playerTutorialCleanupFunction)
+					playerTutorialCleanupFunction()
+
+				if (!x)
+					x = spawnTexts(playerContainer, [`
+					<div class="flex flex-col gap-1">
+						<div class="flex items-center gap-2 text-white font-header text-lg">Press <span class="text-cyan-400 corner-border-small font-bold !p-[1px_7px]">F</span></div>
+						<p class="text-white font-body text-lg" data-text>to decode the about me section</p>
+					</div>
+					`], false)
+			} else {
+				if (x) {
+					x()
+					x = undefined
+				}
+			}
+		}
+		app.ticker.add(playerDecoder)
+	}
+
+	// animate the about me section
+	const decodeBodyText = textDecodeAnimationPixijs(aboutMeBodyText, { duration: 5, updateDelay: 120, finalTint: colors.cyanBright})
+	const decodeAboutMe = (e: KeyboardEvent) => {
+		if (e.key.toLocaleLowerCase() === 'f' && isInRange) {
+			isDecoded = true
+			window.removeEventListener('keydown', decodeAboutMe)
+			decodeBodyText.play()
+			socialAnimations.forEach(anim => anim.play())
+			// transition the question mark to a picture
+			gsap.to(questionMark, {
+				pixi: { alpha: 0 },
+				duration: 1,
+				ease: 'sine.inOut',
+				onComplete: () => {
+					questionMark.width = 140
+					questionMark.height = 140
+					questionMark.position.set(0, 0)
+					questionMark.texture = PIXI.Texture.from('./assets/avatar.png')
+					gsap.to(questionMark, {
+						pixi: { alpha: 1 },
+						duration: 1,
+						ease: 'sine.inOut',
+					})
+				}
+			})
+		}
+	}
+	window.addEventListener('keydown', decodeAboutMe)
+	// #endregion
 
 	const loadGame = () => {
 		outerGlowLoadingCircle.destroy()
 		innerGlowLoadingCircle.destroy()
 
-		const cleanup = spawnTexts(playerContainer, [
+		playerTutorialCleanupFunction = spawnTexts(playerContainer, [
 			`<div class="grid grid-cols-[1fr_1fr] gap-x-4 gap-y-6 items-center text-white text-lg">
 				<p class="corner-border-small text-cyan-400 font-header font-bold flex items-center justify-center !p-[2px_6px]">W</p>
 				<p data-text="true" class="font-body">Accelerate</p>
@@ -698,19 +1095,19 @@ const init = async () => {
 			`]
 		)
 
-		let x: NodeJS.Timeout | undefined
-
-		let y = () => {
-			if (w.isDown) {
-				if (!x)
-					x = setTimeout(() => {
-						cleanup()
-						app.ticker.remove(y)
-					}, 3000)
+		{
+			let x: NodeJS.Timeout | undefined
+			let y = () => {
+				if (w.isDown || a.isDown || s.isDown || d.isDown) {
+					if (!x)
+						x = setTimeout(() => {
+							playerTutorialCleanupFunction()
+							app.ticker.remove(y)
+						}, 3000)
+				}
 			}
+			app.ticker.add(y)
 		}
-
-		app.ticker.add(y)
 	}
 
 	// player movement
