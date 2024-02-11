@@ -2,10 +2,8 @@ import './style.css';
 import * as PIXI from 'pixi.js';
 import * as particles from '@pixi/particle-emitter'
 import { SmoothGraphics as Graphics } from '@pixi/graphics-smooth';
-import { Layout } from '@pixi/layout';
 import { GlowFilter } from '@pixi/filter-glow';
 import { MotionBlurFilter } from '@pixi/filter-motion-blur';
-import _ from 'lodash';
 import anime from 'animejs/lib/anime.es.js';
 
 
@@ -27,7 +25,15 @@ PixiPlugin.registerPIXI(PIXI);
 
 // texts
 const TEXTS = {
-	aboutMe: `I'm a full-stack developer with a passion for creating beautiful and functional web applications. I have experience in building web applications using modern technologies such as React, Node.js, and MongoDB. I'm also familiar with cloud platforms such as AWS and Azure. I'm always eager to learn new technologies and improve my skills. I'm currently looking for new opportunities to work on exciting projects and grow as a developer. I'm a full-stack developer with a passion for creating beautiful and functional web applications. I have experience in building web applications using modern technologies such as React, Node.js, and MongoDB. I'm also familiar with cloud platforms such as AWS and Azure. I'm always eager to learn new technologies and improve my skills. I'm currently looking for new opportunities to work on exciting projects and grow as a developer. I'm a full-stack developer with a passion for creating beautiful and functional web applications. I have experience in building web applications using modern technologies such as React, Node.js, and MongoDB. I'm also familiar with cloud platforms such as AWS and Azure. I'm always eager to learn new technologies and improve my skills. I'm currently looking for new opportunities to work on exciting projects and grow as a developer. I'm a full-stack developer with a passion for creating beautiful and functional web applications.`,
+	aboutMe: `CoDEX Entry - Earth[340] - Date 14/12/2350
+
+I am not sure who will find this. This is my digital diary. A record of my thoughts and experiences.
+
+As a wanderer of the digital world I navigate as a Full Stack Developer aspiring to manifest my imagination and creativity. My ambition for creating visuals beyond this realm knows no bounds. Despite wielding a formidable arsenal of cutting-edge technologies like [NextJS], [ReactJS], [PixiJS], [Java SpringBoot] and more, I remain on a quest to transcend my own limitiations, aspiring to be the pixel wizard that I dream of... Trying my best to capture the beauty of the stars.
+
+I boarded the spaceship Earth[340] on 12/12/2350. I was on a mission to the Andro${Array.from({length: 5}, randChar).join('')} ${Array.from({length: 8}, randChar).join('')} ${Array.from({length: 5}, randChar).join('')} ${Array.from({length: 8}, randChar).join('')}.....>>><<>>>>
+
+...DROPPED CONNECTION...`,
 }
 
 // functions
@@ -432,11 +438,12 @@ document.body.appendChild(app.view);
 // #endregion
 
 let isGameLoaded = false
-const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.otf', 'Drexs.ttf', 'ElderFuthark.ttf', 'Entanglement.ttf', 'Megatrans.otf', 'Phalang.otf', 'Rexusdemo.ttf', 'SpaceallyIllustrationRegular.ttf', 'Trueno.otf', 'MandatoryPlaything.ttf', 'NeoLatina.ttf', 'Inertia.otf', 'Astrobia.ttf', 'Beon.ttf']
+const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.otf', 'Drexs.ttf', 'ElderFuthark.ttf', 'Entanglement.ttf', 'Megatrans.otf', 'Phalang.otf', 'Rexusdemo.ttf', 'SpaceallyIllustrationRegular.ttf', 'Trueno.otf', 'MandatoryPlaything.ttf', 'NeoLatina.ttf', 'Inertia.otf', 'Astrobia.ttf', 'Beon.ttf', 'CPMono_Black.otf', 'CPMono_Bold.otf', 'CPMono_Light.otf','CPMono_ExtraLight.otf', 'CPMono_Plain.otf']
 const colors = {
 	cyan: 0x93edfd,
 	cyanBright: 0x22d3ee,
-	greenCyan: 0x7fffd4,
+	// greenCyan: 0x7fffd4,
+	green: 0x00ff5e,
 	toString: (color: number) => {
 		return `#${color.toString(16)}`
 	}
@@ -844,8 +851,8 @@ const init = async () => {
 
 	const aboutMeBodyText = new PIXI.Text(
 		TEXTS.aboutMe, {
-		fontFamily: 'NeoLatina',
-		fontSize: 26,
+		fontFamily: 'CPMono_Light',
+		fontSize: 22,
 		align: 'left',
 		fill: 0xffffff,
 		padding: 20,
@@ -1034,8 +1041,7 @@ const init = async () => {
 				if (!x)
 					x = spawnTexts(playerContainer, [`
 					<div class="flex flex-col gap-1">
-						<div class="flex items-center gap-2 text-white font-header text-lg">Press <span class="text-cyan-400 corner-border-small font-bold !p-[1px_7px]">F</span></div>
-						<p class="text-white font-body text-lg" data-text>to decode the about me section</p>
+						<div class="flex items-center gap-2 text-white font-header text-lg">Press <span class="text-cyan-400 corner-border-small font-bold !p-[1px_7px]">F</span> to decode</div>
 					</div>
 					`], false)
 			} else {
@@ -1049,7 +1055,7 @@ const init = async () => {
 	}
 
 	// animate the about me section
-	const decodeBodyText = textDecodeAnimationPixijs(aboutMeBodyText, { duration: 5, updateDelay: 120, finalTint: colors.greenCyan})
+	const decodeBodyText = textDecodeAnimationPixijs(aboutMeBodyText, { duration: 5, updateDelay: 120, finalTint: colors.green})
 	const decodeAboutMe = (e: KeyboardEvent) => {
 		if (e.key.toLocaleLowerCase() === 'f' && isInRange) {
 			isDecoded = true

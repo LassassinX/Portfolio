@@ -3,7 +3,7 @@
 // const bodyFont = 'NeoLatina'
 
 const headerFont = 'MandatoryPlaything'
-const bodyFont = "NeoLatina" 
+const bodyFont = "CPMono_Light" 
 
 module.exports = {
 	content: ['./public/*.html', './src/**/*.ts', './src/**/*.tsx', './src/**/*.js', './src/**/*.jsx'],
