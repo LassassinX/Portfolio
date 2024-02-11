@@ -436,6 +436,7 @@ const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.o
 const colors = {
 	cyan: 0x93edfd,
 	cyanBright: 0x22d3ee,
+	greenCyan: 0x7fffd4,
 	toString: (color: number) => {
 		return `#${color.toString(16)}`
 	}
@@ -1048,7 +1049,7 @@ const init = async () => {
 	}
 
 	// animate the about me section
-	const decodeBodyText = textDecodeAnimationPixijs(aboutMeBodyText, { duration: 5, updateDelay: 120, finalTint: colors.cyanBright})
+	const decodeBodyText = textDecodeAnimationPixijs(aboutMeBodyText, { duration: 5, updateDelay: 120, finalTint: colors.greenCyan})
 	const decodeAboutMe = (e: KeyboardEvent) => {
 		if (e.key.toLocaleLowerCase() === 'f' && isInRange) {
 			isDecoded = true
