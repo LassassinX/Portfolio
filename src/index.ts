@@ -133,11 +133,14 @@ const makeRect = ({
 
 // lets make a single star
 const createStar = (x: number, y: number, size: number, color: number) => {
-	const star = new Graphics();
-	star.beginFill(color, 1, true);
-	star.drawCircle(x, y, size);
-	star.cacheAsBitmap = true;
-	star.endFill();
+
+	const star = PIXI.Sprite.from(Math.random() < 0.3 ? './assets/star.png' : './assets/starSparkle.png')
+	star.width = size
+	star.height = size
+	star.tint = color
+	star.anchor.set(0.5)
+	star.position.set(x, y)
+	star.rotation = Math.random() * Math.PI * 2
 	return star;
 }
 
@@ -740,10 +743,18 @@ const init = async () => {
 	const starColors = [
 		// 0xffffff,
 		colors.cyan,
+		// bright orange
+		// 0xe87502,
+		// 0x02e82c,
+		// 0xe802be,
+		// 0xff1414,
+		// 0xfc9351,
+
+
 		// colors.cyanBright,
 		// 0x7E4CCB,
 		// 0xF37A18,
-		0x04FCFC,
+		// 0x04FCFC,
 	]
 
 	// density of stars should be based on screen size, 15 per 100000px
@@ -751,9 +762,11 @@ const init = async () => {
 	console.log(STAR_COUNT)
 
 	for (let i = 0; i < STAR_COUNT; i++) {
-		const color = randomFromArray(starColors), x = randomFromRange(0, app.view.width), y = randomFromRange(0, app.view.height), size = Math.floor(randomFromRange(1, 5))
-		const star = createStar(x, y, size, color)
-		const starSprite = new PIXI.Sprite(app.renderer.generateTexture(star));
+		const minSize = 4
+		const maxSize = 20
+		const color = randomFromArray(starColors), x = randomFromRange(0, app.view.width), y = randomFromRange(0, app.view.height), 
+		size = Math.floor(randomFromRange(minSize, maxSize))
+		const starSprite = createStar(x, y, size, color)
 
 		starSprite.alpha = randomFromRange(0.1, 0.3)
 		starSprite.anchor.set(0.5);
@@ -761,10 +774,10 @@ const init = async () => {
 		starSprite.y = y;
 		starSprite.zIndex = size;
 
-		const finalAlpha = 1 * starSprite.zIndex / 4
+		const finalAlpha = 1 * starSprite.zIndex / (maxSize-1)
 		gsap.to(starSprite, {
 			pixi: { alpha: finalAlpha, skewX: randomFromRange(-0.5, 0.5), skewY: randomFromRange(-0.5, 0.5) },
-			duration: randomFromRange(2, 7),
+			duration: randomFromRange(1, 2.5),
 			ease: `rough({
 			template:none.out,
 			strength: 1,
@@ -1092,6 +1105,51 @@ const init = async () => {
 	}
 	window.addEventListener('keydown', decodeAboutMe)
 	// #endregion
+
+	// Project section
+	// #region
+	const projectsContainer = new PIXI.Container()
+	projectsContainer.name = 'projectsContainer'
+
+	// load the projectsBg
+	const projectsVisor = PIXI.Sprite.from('./assets/projectsVisor.png')
+	projectsVisor.anchor.set(0.5)
+	projectsVisor.scale.set(0.5)
+	projectsContainer.addChild(projectsVisor)
+	
+	const projectsText = new PIXI.Text(
+		'Projects', {
+		fontFamily: headerFont,
+		fontSize: 182,
+		align: 'left',
+		fill: colors.cyanBright,
+	})
+	projectsText.position.set(0, -35)
+	projectsText.anchor.set(0.5)
+	projectsText.alpha = 0.3
+	gsap.to(projectsText, {
+		pixi: {
+			alpha: 1,
+		},
+		duration: 3,
+		ease: `rough({ template: circ.easeOut, strength: 4, points: 50, taper: 'out', randomize: true, clamp: true})`,
+		// ease: `rough({
+		// 	template:circ.out,
+		// 	strength: 2,
+		// 	points:10,
+		// 	taper:out,
+		// 	randomize:false,
+		// 	clamp:true
+		// 	})`,
+		repeat: -1,
+		yoyo: true,
+	})
+
+	projectsVisor.addChild(projectsText)
+
+
+	projectsContainer.position.set(0, -400)
+	bgObjectsContainer.addChild(projectsContainer)
 
 	const loadGame = () => {
 		outerGlowLoadingCircle.destroy()
