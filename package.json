@@ -26,6 +26,7 @@
   "dependencies": {
     "@pixi/filter-glow": "^5.2.1",
     "@pixi/filter-motion-blur": "^5.1.1",
+    "@pixi/gif": "^2.1.0",
     "@pixi/graphics-smooth": "^1.1.0",
     "@pixi/particle-emitter": "^5.0.8",
     "animejs": "^3.2.2",

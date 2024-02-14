@@ -5,6 +5,8 @@ import { SmoothGraphics as Graphics } from '@pixi/graphics-smooth';
 import { GlowFilter } from '@pixi/filter-glow';
 import { MotionBlurFilter } from '@pixi/filter-motion-blur';
 import anime from 'animejs/lib/anime.es.js';
+import '@pixi/gif';
+
 
 
 import { gsap, wrap } from 'gsap';
@@ -18,6 +20,7 @@ import { PixiPlugin } from 'gsap/PixiPlugin';
 // particles
 import particleConfig from './emitter.json'
 import outerParticleConfig from './emitter-outer.json'
+import projectorEmitterConfig from './projector-emitter.json'
 
 gsap.registerPlugin(PixiPlugin);
 // give the plugin a reference to the PIXI object
@@ -38,6 +41,7 @@ I boarded the spaceship Earth[340] on 12/12/2350. I was on a mission to the Andr
 
 // functions
 // #region
+const rad = (degrees: number) => degrees * Math.PI / 180
 const randomFromRange = (min: number, max: number) => Math.random() * (max - min) + min;
 const randomFromArray = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -454,6 +458,9 @@ const colors = {
 	cyanBright: 0x22d3ee,
 	// greenCyan: 0x7fffd4,
 	green: 0x00ff5e,
+	orangeRed: 0xff4500,
+	orange: 0xff9736,
+	orangeBright: 0xFFA500,
 	toString: (color: number) => {
 		return `#${color.toString(16)}`
 	}
@@ -764,8 +771,8 @@ const init = async () => {
 	for (let i = 0; i < STAR_COUNT; i++) {
 		const minSize = 4
 		const maxSize = 20
-		const color = randomFromArray(starColors), x = randomFromRange(0, app.view.width), y = randomFromRange(0, app.view.height), 
-		size = Math.floor(randomFromRange(minSize, maxSize))
+		const color = randomFromArray(starColors), x = randomFromRange(0, app.view.width), y = randomFromRange(0, app.view.height),
+			size = Math.floor(randomFromRange(minSize, maxSize))
 		const starSprite = createStar(x, y, size, color)
 
 		starSprite.alpha = randomFromRange(0.1, 0.3)
@@ -774,9 +781,9 @@ const init = async () => {
 		starSprite.y = y;
 		starSprite.zIndex = size;
 
-		const finalAlpha = 1 * starSprite.zIndex / (maxSize-1)
+		const finalAlpha = 1 * starSprite.zIndex / (maxSize - 1)
 		gsap.to(starSprite, {
-			pixi: { alpha: finalAlpha, skewX: randomFromRange(-0.5, 0.5), skewY: randomFromRange(-0.5, 0.5) },
+			pixi: { alpha: finalAlpha },
 			duration: randomFromRange(1, 2.5),
 			ease: `rough({
 			template:none.out,
@@ -788,6 +795,16 @@ const init = async () => {
 			})`,
 			repeat: -1,
 			yoyo: true,
+		})
+		const rotate = starSprite.rotation
+
+		gsap.to(starSprite, {
+			pixi: {
+				rotation: rotate - Math.PI * 2 //full rotation 
+			},
+			duration: randomFromRange(10, 25),
+			ease: `sine.inOut`,
+			repeat: -1,
 		})
 
 		starSprite.cullable = true
@@ -853,219 +870,25 @@ const init = async () => {
 	gameContainer.mask = maskSprite
 	let playerTutorialCleanupFunction: () => void
 
-	// sections
-
-	// sections
-	// about me section
-	// #region
-	const aboutMeContainer = new PIXI.Container()
-	aboutMeContainer.name = 'aboutMeContainer'
-
-	const padding = 40
-	const aboutMeTitleText = new PIXI.Text(
-		'About Me', {
-		fontFamily: headerFont,
-		fontSize: 32,
-		align: 'left',
-		fill: colors.cyanBright,
-		wordWrap: true,
-		wordWrapWidth: 700,
-	})
-
-	const aboutMeBodyText = new PIXI.Text(
-		TEXTS.aboutMe, {
-		fontFamily: bodyFont,
-		fontSize: 22,
-		align: 'left',
-		fill: 0xffffff,
-		padding: 20,
-		wordWrap: true,
-		wordWrapWidth: 750,
-	})
-
-	aboutMeBodyText.position.set(padding / 2, padding / 2)
-
-	const bodyBg = makeRect({
-		width: aboutMeBodyText.width + padding,
-		height: aboutMeBodyText.height + padding,
-		color: 0x000000,
-		alpha: 0.5,
-		cornerSize: 15,
-		cornerThickness: 3,
-	})
-
-	const bodyBgMask = makeRect({
-		width: aboutMeBodyText.width,
-		height: aboutMeBodyText.height,
-		color: 0xffffff,
-		alpha: 1,
-	})
-
-	bodyBgMask.position.set(padding / 2, padding / 2)
-
-	aboutMeBodyText.mask = bodyBgMask
-
-	const titleBg = makeRect({
-		width: aboutMeBodyText.width + padding,
-		height: 140 + padding,
-		color: 0x000000,
-		alpha: 0.5,
-		cornerSize: 15,
-		cornerThickness: 3,
-	})
-
-	// make a picture square of 140
-	const pictureSquare = makeRect({
-		width: 140,
-		height: 140,
-		alpha: 0,
-		borderThickness: 2,
-		borderColor: colors.cyanBright,
-	})
-
-
-	pictureSquare.position.set(padding / 2, padding / 2)
-
-	// load the question mark
-	const questionMark = PIXI.Sprite.from('./assets/question.png')
-	questionMark.width = 100
-	questionMark.height = 100
-	pictureSquare.addChild(questionMark)
-	questionMark.position.set(padding / 2, padding / 2)
-
-	const line = new Graphics().lineStyle(2, colors.cyanBright, 1).moveTo(0, 0).lineTo(0, titleBg.height)
-	line.position.set(pictureSquare.x + pictureSquare.width + padding / 2, 0)
-
-	const headerContainer = new PIXI.Container()
-	aboutMeTitleText.position.set(line.x + line.width + padding / 2, padding / 2)
-
-	// socials 
-	const socials = [
-		{ name: 'Github', link: `` },
-		{ name: 'Linkedin', link: `` },
-		{ name: 'Facebook', link: `` },
-		{ name: 'Resume/CV', link: `` },
-	]
-
-	const socialsContainer = new PIXI.Container()
-	socialsContainer.name = 'socialsContainer'
-
-	let prevSocial: PIXI.Container | undefined
-	let socialAnimations: gsap.core.Tween[] = []
-	socials.forEach((social, i) => {
-		let padding = 20
-		let gap = 20
-		const socialContainer = new PIXI.Container()
-		const text = new PIXI.Text(
-			social.name, {
-			fontFamily: bodyFont,
-			fontSize: 18,
-			align: 'left',
-			fill: 0xffffff,
-		})
-
-		const bg = makeRect({
-			width: text.width + padding,
-			height: text.height + padding,
-			alpha: 0,
-			cornerSize: 25,
-			cornerThickness: 1,
-		})
-
-		const bg2 = makeRect({
-			width: text.width + padding,
-			height: text.height + padding,
-			alpha: 0,
-			borderThickness: 1,
-			borderColor: colors.cyanBright,
-		})
-
-		bg2.alpha = 0
-		const bgMask = makeRect({
-			width: text.width,
-			height: text.height,
-			color: 0xffffff,
-			alpha: 1,
-		})
-
-		text.position.set(padding / 2, padding / 2)
-		bgMask.position.set(padding / 2, padding / 2)
-
-		text.mask = bgMask
-		bg.position.set(0, 0)
-
-		socialContainer.addChild(bg)
-		socialContainer.addChild(bg2)
-		socialContainer.addChild(bgMask)
-		socialContainer.addChild(text)
-		socialContainer.position.set(prevSocial ? prevSocial.x + prevSocial.width + gap : 0, 0)
-		prevSocial = socialContainer
-
-		socialAnimations.push(textDecodeAnimationPixijs(text, { duration: 1, updateDelay: 1, finalTint: colors.cyanBright }))
-		socialContainer.eventMode = 'static'
-		socialContainer.on('mouseenter', () => {
-			if (isDecoded && socialAnimations[i].progress() === 1) {
-				socialContainer.cursor = 'pointer'
-			}
-
-			if (socialAnimations[i].progress() === 1)
-				gsap.to(bg2, { pixi: { alpha: 1 }, duration: 0.2, ease: 'sine.inOut' })
-		})
-		socialContainer.on('mouseleave', () => {
-			if (socialAnimations[i].progress() === 1)
-				gsap.to(bg2, { pixi: { alpha: 0 }, duration: 0.2, ease: 'sine.inOut' })
-		})
-
-		socialContainer.on('mousedown', () => {
-			if (isDecoded && socialAnimations[i].progress() === 1) {
-				window.open(social.link, '_blank')
-			}
-		})
-		socialsContainer.addChild(socialContainer)
-	})
-
-	socialsContainer.position.set(aboutMeTitleText.x, titleBg.height - socialsContainer.height - padding / 2)
-	headerContainer.addChild(titleBg)
-	headerContainer.addChild(line)
-	headerContainer.addChild(pictureSquare)
-	headerContainer.addChild(aboutMeTitleText)
-	headerContainer.addChild(socialsContainer)
-
-	const bodyContainer = new PIXI.Container()
-	bodyContainer.addChild(bodyBg)
-	bodyContainer.addChild(bodyBgMask)
-	bodyContainer.addChild(aboutMeBodyText)
-	bodyContainer.position.set(0, titleBg.height + padding / 2)
-
-	aboutMeContainer.addChild(headerContainer)
-	aboutMeContainer.addChild(bodyContainer)
-
-	aboutMeContainer.position.set(-1500, -500)
-	bgObjectsContainer.addChild(aboutMeContainer)
-
-	// check if player is near the about me section
-	let isInRange = false
-	let isDecoded = false
-	{
+	const spawnUIText = (targetContainer: PIXI.Container, range: number, text: string, openConditional: Function | undefined, onButtonPress: Function | undefined) => {
 		let x: (() => void) | undefined
-		const playerDecoder = () => {
-			isInRange = checkCollision(playerContainer, aboutMeContainer, 200)
-			if (isDecoded) {
-				if (x) {
-					x()
-					x = undefined
-				}
-				app.ticker.remove(playerDecoder)
-				return
+		let isInRange = false
+		const playerAction = () => {
+			isInRange = checkCollision(playerContainer, targetContainer, range)
+			if (openConditional) {
+				isInRange = isInRange && openConditional()
 			}
+
+
+
 			if (isInRange) {
 				if (playerTutorialCleanupFunction)
 					playerTutorialCleanupFunction()
 
 				if (!x)
 					x = spawnTexts(playerContainer, [`
-						<div class="flex items-center gap-2 text-white font-body text-lg">press <span class="text-cyan-400 corner-border-small font-bold font-header !p-[1px_7px]">F</span> to decode_</div>
-					`], false)
+					<div class="flex items-center gap-2 text-white font-body text-lg">press <span class="text-cyan-400 corner-border-small font-bold font-header !p-[1px_7px]">F</span> ${text}</div>
+				`], false)
 			} else {
 				if (x) {
 					x()
@@ -1073,83 +896,650 @@ const init = async () => {
 				}
 			}
 		}
-		app.ticker.add(playerDecoder)
-	}
 
-	// animate the about me section
-	const decodeBodyText = textDecodeAnimationPixijs(aboutMeBodyText, { duration: 5, updateDelay: 40, finalTint: colors.green })
-	const decodeAboutMe = (e: KeyboardEvent) => {
-		if (e.key.toLocaleLowerCase() === 'f' && isInRange) {
-			isDecoded = true
-			window.removeEventListener('keydown', decodeAboutMe)
-			decodeBodyText.play()
-			socialAnimations.forEach(anim => anim.play())
-			// transition the question mark to a picture
-			gsap.to(questionMark, {
-				pixi: { alpha: 0 },
-				duration: 1,
-				ease: 'sine.inOut',
-				onComplete: () => {
-					questionMark.width = 140
-					questionMark.height = 140
-					questionMark.position.set(0, 0)
-					questionMark.texture = PIXI.Texture.from('./assets/avatar.png')
-					gsap.to(questionMark, {
-						pixi: { alpha: 1 },
-						duration: 1,
-						ease: 'sine.inOut',
-					})
+		app.ticker.add(playerAction) 
+
+		window.addEventListener('keydown', (e) => {
+			if (e.key.toLocaleLowerCase() === 'f' && isInRange && onButtonPress) {
+				onButtonPress()
+			}
+		})
+	}
+	// sections
+	// about me section
+	// #region
+	{
+		const aboutMeContainer = new PIXI.Container()
+		aboutMeContainer.name = 'aboutMeContainer'
+
+		const padding = 40
+		const aboutMeTitleText = new PIXI.Text(
+			'About Me', {
+			fontFamily: headerFont,
+			fontSize: 32,
+			align: 'left',
+			fill: colors.cyanBright,
+			wordWrap: true,
+			wordWrapWidth: 700,
+		})
+
+		const aboutMeBodyText = new PIXI.Text(
+			TEXTS.aboutMe, {
+			fontFamily: bodyFont,
+			fontSize: 20,
+			align: 'left',
+			fill: 0xffffff,
+			padding: 20,
+			wordWrap: true,
+			wordWrapWidth: 750,
+		})
+
+		aboutMeBodyText.position.set(padding / 2, padding / 2)
+
+		const bodyBg = makeRect({
+			width: aboutMeBodyText.width + padding,
+			height: aboutMeBodyText.height + padding,
+			color: 0x000000,
+			alpha: 0.5,
+			cornerSize: 15,
+			cornerThickness: 3,
+		})
+
+		const bodyBgMask = makeRect({
+			width: aboutMeBodyText.width,
+			height: aboutMeBodyText.height,
+			color: 0xffffff,
+			alpha: 1,
+		})
+
+		bodyBgMask.position.set(padding / 2, padding / 2)
+
+		aboutMeBodyText.mask = bodyBgMask
+
+		const titleBg = makeRect({
+			width: aboutMeBodyText.width + padding,
+			height: 140 + padding,
+			color: 0x000000,
+			alpha: 0.5,
+			cornerSize: 15,
+			cornerThickness: 3,
+		})
+
+		// make a picture square of 140
+		const pictureSquare = makeRect({
+			width: 140,
+			height: 140,
+			alpha: 0,
+			borderThickness: 2,
+			borderColor: colors.cyanBright,
+		})
+
+
+		pictureSquare.position.set(padding / 2, padding / 2)
+
+		// load the question mark
+		const questionMark = PIXI.Sprite.from('./assets/question.png')
+		questionMark.width = 100
+		questionMark.height = 100
+		pictureSquare.addChild(questionMark)
+		questionMark.position.set(padding / 2, padding / 2)
+
+		const line = new Graphics().lineStyle(2, colors.cyanBright, 1).moveTo(0, 0).lineTo(0, titleBg.height)
+		line.position.set(pictureSquare.x + pictureSquare.width + padding / 2, 0)
+
+		const headerContainer = new PIXI.Container()
+		aboutMeTitleText.position.set(line.x + line.width + padding / 2, padding / 2)
+
+		// socials 
+		const socials = [
+			{ name: 'Github', link: `https://github.com/LassassinX` },
+			{ name: 'Linkedin', link: `https://www.linkedin.com/in/sanjid-chowdhury-509a57177/` },
+			{ name: 'Facebook', link: `https://www.facebook.com/LassassinX/` },
+			{ name: 'Resume/CV', link: `` },
+		]
+
+		const socialsContainer = new PIXI.Container()
+		socialsContainer.name = 'socialsContainer'
+
+		let prevSocial: PIXI.Container | undefined
+		let socialAnimations: gsap.core.Tween[] = []
+		socials.forEach((social, i) => {
+			let padding = 20
+			let gap = 20
+			const socialContainer = new PIXI.Container()
+			const text = new PIXI.Text(
+				social.name, {
+				fontFamily: bodyFont,
+				fontSize: 18,
+				align: 'left',
+				fill: 0xffffff,
+			})
+
+			const bg = makeRect({
+				width: text.width + padding,
+				height: text.height + padding,
+				alpha: 0,
+				cornerSize: 25,
+				cornerThickness: 1,
+			})
+
+			const bg2 = makeRect({
+				width: text.width + padding,
+				height: text.height + padding,
+				alpha: 0,
+				borderThickness: 1,
+				borderColor: colors.cyanBright,
+			})
+
+			bg2.alpha = 0
+			const bgMask = makeRect({
+				width: text.width,
+				height: text.height,
+				color: 0xffffff,
+				alpha: 1,
+			})
+
+			text.position.set(padding / 2, padding / 2)
+			bgMask.position.set(padding / 2, padding / 2)
+
+			text.mask = bgMask
+			bg.position.set(0, 0)
+
+			socialContainer.addChild(bg)
+			socialContainer.addChild(bg2)
+			socialContainer.addChild(bgMask)
+			socialContainer.addChild(text)
+			socialContainer.position.set(prevSocial ? prevSocial.x + prevSocial.width + gap : 0, 0)
+			prevSocial = socialContainer
+
+			socialAnimations.push(textDecodeAnimationPixijs(text, { duration: 1, updateDelay: 1, finalTint: colors.cyanBright }))
+			socialContainer.eventMode = 'static'
+			socialContainer.on('mouseenter', () => {
+				if (isDecoded && socialAnimations[i].progress() === 1) {
+					socialContainer.cursor = 'pointer'
+				}
+
+				if (socialAnimations[i].progress() === 1)
+					gsap.to(bg2, { pixi: { alpha: 1 }, duration: 0.2, ease: 'sine.inOut' })
+			})
+			socialContainer.on('mouseleave', () => {
+				if (socialAnimations[i].progress() === 1)
+					gsap.to(bg2, { pixi: { alpha: 0 }, duration: 0.2, ease: 'sine.inOut' })
+			})
+
+			socialContainer.on('mousedown', () => {
+				if (isDecoded && socialAnimations[i].progress() === 1) {
+					window.open(social.link, '_blank')
 				}
 			})
+			socialsContainer.addChild(socialContainer)
+		})
+
+		socialsContainer.position.set(aboutMeTitleText.x, titleBg.height - socialsContainer.height - padding / 2)
+		headerContainer.addChild(titleBg)
+		headerContainer.addChild(line)
+		headerContainer.addChild(pictureSquare)
+		headerContainer.addChild(aboutMeTitleText)
+		headerContainer.addChild(socialsContainer)
+
+		const bodyContainer = new PIXI.Container()
+		bodyContainer.addChild(bodyBg)
+		bodyContainer.addChild(bodyBgMask)
+		bodyContainer.addChild(aboutMeBodyText)
+		bodyContainer.position.set(0, titleBg.height + padding / 2)
+
+		aboutMeContainer.addChild(headerContainer)
+		aboutMeContainer.addChild(bodyContainer)
+
+		aboutMeContainer.position.set(-1500, -500)
+		bgObjectsContainer.addChild(aboutMeContainer)
+
+		// check if player is near the about me section
+		let isInRange = false
+		let isDecoded = false
+		{
+			let x: (() => void) | undefined
+			const playerDecoder = () => {
+				isInRange = checkCollision(playerContainer, aboutMeContainer, 50)
+				if (isDecoded) {
+					if (x) {
+						x()
+						x = undefined
+					}
+					app.ticker.remove(playerDecoder)
+					return
+				}
+				if (isInRange) {
+					if (playerTutorialCleanupFunction)
+						playerTutorialCleanupFunction()
+
+					if (!x)
+						x = spawnTexts(playerContainer, [`
+						<div class="flex items-center gap-2 text-white font-body text-lg">press <span class="text-cyan-400 corner-border-small font-bold font-header !p-[1px_7px]">F</span> to decode_</div>
+					`], false)
+				} else {
+					if (x) {
+						x()
+						x = undefined
+					}
+				}
+			}
+
+			app.ticker.add(playerDecoder)
 		}
+
+		// animate the about me section
+		const decodeBodyText = textDecodeAnimationPixijs(aboutMeBodyText, { duration: 5, updateDelay: 40, finalTint: colors.green })
+		const decodeAboutMe = (e: KeyboardEvent) => {
+			if (e.key.toLocaleLowerCase() === 'f' && isInRange) {
+				isDecoded = true
+				window.removeEventListener('keydown', decodeAboutMe)
+				decodeBodyText.play()
+				socialAnimations.forEach(anim => anim.play())
+				// transition the question mark to a picture
+				gsap.to(questionMark, {
+					pixi: { alpha: 0 },
+					duration: 1,
+					ease: 'sine.inOut',
+					onComplete: () => {
+						questionMark.width = 140
+						questionMark.height = 140
+						questionMark.position.set(0, 0)
+						questionMark.texture = PIXI.Texture.from('./assets/avatar.png')
+						gsap.to(questionMark, {
+							pixi: { alpha: 1 },
+							duration: 1,
+							ease: 'sine.inOut',
+						})
+					}
+				})
+			}
+		}
+		window.addEventListener('keydown', decodeAboutMe)
 	}
-	window.addEventListener('keydown', decodeAboutMe)
 	// #endregion
 
 	// Project section
 	// #region
-	const projectsContainer = new PIXI.Container()
-	projectsContainer.name = 'projectsContainer'
+	{
+		const projectsContainer = new PIXI.Container()
+		projectsContainer.name = 'projectsContainer'
 
-	// load the projectsBg
-	const projectsVisor = PIXI.Sprite.from('./assets/projectsVisor.png')
-	projectsVisor.anchor.set(0.5)
-	projectsVisor.scale.set(0.5)
-	projectsContainer.addChild(projectsVisor)
-	
-	const projectsText = new PIXI.Text(
-		'Projects', {
-		fontFamily: headerFont,
-		fontSize: 182,
-		align: 'left',
-		fill: colors.cyanBright,
-	})
-	projectsText.position.set(0, -35)
-	projectsText.anchor.set(0.5)
-	projectsText.alpha = 0.3
-	gsap.to(projectsText, {
-		pixi: {
-			alpha: 1,
-		},
-		duration: 3,
-		ease: `rough({ template: circ.easeOut, strength: 4, points: 50, taper: 'out', randomize: true, clamp: true})`,
-		// ease: `rough({
-		// 	template:circ.out,
-		// 	strength: 2,
-		// 	points:10,
-		// 	taper:out,
-		// 	randomize:false,
-		// 	clamp:true
-		// 	})`,
-		repeat: -1,
-		yoyo: true,
-	})
+		// load the projectsBg
+		const projectsVisorContainer = new PIXI.Container()
+		projectsVisorContainer.name = 'projectsVisorContainer'
 
-	projectsVisor.addChild(projectsText)
+		const projectsVisor = PIXI.Sprite.from('./assets/projectsVisor.png')
+		projectsVisor.width = 660
+		projectsVisor.height = 221
+
+		const projectTextContainer = new PIXI.Container()
+
+		const projectsText = new PIXI.Text(
+			'Pro', {
+			fontFamily: headerFont,
+			fontSize: 91,
+			align: 'left',
+			fill: colors.cyanBright,
+		})
+
+		const projectsText2 = new PIXI.Text(
+			'jects', {
+			fontFamily: headerFont,
+			fontSize: 91,
+			align: 'left',
+			fill: colors.cyanBright,
+		})
+
+		projectsText2.position.set(projectsText.width, 0)
+
+		projectTextContainer.addChild(projectsText)
+		projectTextContainer.addChild(projectsText2)
+		projectTextContainer.position.set(70, 50)
+
+		projectsText2.alpha = 0.2
+		let blinkGap = 0.04
+		const tl = gsap.timeline({
+			repeat: -1,
+		})
+		const microBlink = (element: any, tl: GSAPTimeline) => {
+			tl.to(element, {
+				pixi: {
+					alpha: 1,
+				},
+				duration: blinkGap,
+				ease: 'steps(1)',
+			})
+			tl.to(element, {
+				pixi: {
+					alpha: 0.2,
+				},
+				duration: blinkGap,
+				ease: 'steps(1)',
+			})
+			tl.to(element, {
+				pixi: {
+					alpha: 1,
+				},
+				duration: blinkGap,
+				ease: 'steps(1)',
+			})
+		}
+		const blink = (element: any, tl: GSAPTimeline) => {
+			microBlink(element, tl)
+			microBlink(element, tl)
+		}
+		blink(projectsText2, tl)
+		tl.to(projectsText2, {
+			pixi: {
+				alpha: 1,
+			},
+			duration: 3,
+			ease: 'steps(1)',
+		})
+		tl.to(projectsText2, {
+			pixi: {
+				alpha: 0.2,
+			},
+			duration: 2,
+			ease: 'steps(1)',
+		})
+		blink(projectsText2, tl)
+		tl.to(projectsText2, {
+			pixi: {
+				alpha: 1,
+			},
+			duration: 3,
+			ease: 'steps(1)',
+		})
+		microBlink(projectsText2, tl)
+		microBlink(projectsText2, tl)
+		tl.to(projectsText2, {
+			pixi: {
+				alpha: 0.2,
+			},
+			duration: 3,
+			ease: 'steps(1)',
+		})
+		microBlink(projectsText2, tl)
+
+		projectsVisorContainer.addChild(projectsVisor)
+		projectsVisorContainer.addChild(projectTextContainer)
+
+		const projectorLightContainer = new PIXI.Container()
+		projectorLightContainer.name = 'projectorLightContainer'
+
+		const light = new PIXI.Sprite(PIXI.Texture.from('./assets/projectorLight2.png'))
+		light.width = 320
+		light.height = 360
 
 
-	projectsContainer.position.set(0, -400)
-	bgObjectsContainer.addChild(projectsContainer)
+		const lightParticlesContainer = new PIXI.Container
+		lightParticlesContainer.eventMode = 'none'
+
+		// spawn particles
+		const lightParticles = new particles.Emitter(
+			lightParticlesContainer,
+			particles.upgradeConfig(
+				projectorEmitterConfig,
+				[PIXI.Texture.from('./assets/starWhite.png'), PIXI.Texture.from('./assets/starWhiteSparkle.png')]
+			)
+		)
+
+		lightParticles.autoUpdate = true
+		lightParticles.emit = false
+
+		lightParticlesContainer.position.set(77, 153)
+
+		projectorLightContainer.addChild(lightParticlesContainer)
+		projectorLightContainer.addChild(light)
+		projectorLightContainer.position.set(projectsVisor.width - 60, -120)
+		projectorLightContainer.alpha = 0
+
+		const projectElementsContainer = new PIXI.Container()
+		projectsContainer.name = 'projectsElementContainer'
+
+		const projects = [
+			{
+				name: 'GunZ',
+				description: `Fight off hordes of enemies /̵͇̿̿/'̿'̿ ̿ ̿̿ ̿̿ ̿̿  in this visually appealing fast paced action game for the web.`,
+				skills: ['HTMLCanvas', 'TailwindCSS', 'NextJS', 'AnimeJS', 'Vercel'],
+				link: 'https://gunz.vercel.app/',
+				video: './assets/GunZ.gif',
+			},
+			{
+				name: 'EzNotes',
+				description: 'A super convinient note taking app 📝 with cloud storage and SSO. Practically sublime text for the web.',
+				skills: ['NextJS', 'TS', 'TailwindCSS', 'Vercel', 'Prisma', 'NextAuth'],
+				link: 'https://ez-note.vercel.app/',
+				image: './assets/ez-notes.png',
+			},
+			{
+				name: 'Strange occurances',
+				description: 'UNDER DEVELOPMENT. A live chat app to connect with random strangers with common interests.',
+				skills: ['NextJS', 'TS', 'TailwindCSS', 'Java', 'SpringBoot', 'Heroku'],
+			},
+			{
+				name: 'Portfolio',
+				description: 'This beloved portfolio website ♡, and its simplier version.',
+				skills: ['NextJS', 'TS', 'TailwindCSS', 'PixiJS', 'GSAP', 'Photoshop'],
+			},
+		]
+
+		let y = 0, gap = 30, contentGap = 20, x = 0, bgPadding = 120, bgTopMargin = 24, bgLeftMargin = 39, bgRightMargin = 65
+		projects.forEach((project, i) => {
+			const projectElementContainer = new PIXI.Container()
+			projectElementContainer.name = `projectContainer${i}`
+
+			const projectContentContainer = new PIXI.Container()
+			projectContentContainer.name = 'projectContentContainer'
+
+			const projectBg = PIXI.Sprite.from('./assets/projectContainer.png')
+			const aspect = 450 / 390
+			projectBg.width = 600
+			projectBg.height = projectBg.width / aspect
+
+			const projectHeader = new PIXI.Text(
+				project.name, {
+				fontFamily: headerFont,
+				fontSize: 48,
+				align: 'left',
+				fill: colors.cyanBright,
+				wordWrap: true,
+				wordWrapWidth: projectBg.width - bgPadding + 50,
+			})
+
+			const projectDescription = new PIXI.Text(
+				project.description, {
+				fontFamily: bodyFont,
+				fontSize: 20,
+				align: 'left',
+				fill: 0xffffff,
+				wordWrap: true,
+				wordWrapWidth: projectBg.width - bgPadding + 50,
+			})
+
+			projectDescription.position.set(0, projectHeader.height + contentGap * 1.5)
+
+			// skills
+			const skillsContainer = new PIXI.Container()
+			{
+				let skillsPadding = 10
+				let skillsGap = 10, prevSkill: PIXI.Container
+				skillsContainer.name = 'skillsContainer'
+				project.skills.forEach((skill, i) => {
+					const skillContainer = new PIXI.Container()
+					const text = new PIXI.Text(
+						skill, {
+						fontFamily: bodyFont,
+						fontSize: 14,
+						align: 'left',
+						fill: colors.green,
+					})
+
+					const bg = makeRect({
+						width: text.width + skillsPadding,
+						height: text.height + skillsPadding,
+						alpha: 0,
+						borderColor: colors.green,
+						borderThickness: 1,
+					})
+
+					text.position.set(skillsPadding / 2, skillsPadding / 2)
+					bg.position.set(0, 0)
+
+					skillContainer.addChild(bg)
+					skillContainer.addChild(text)
+					skillContainer.position.set(prevSkill ? prevSkill.x + prevSkill.width + skillsGap : 0, 0)
+					prevSkill = skillContainer
+
+					skillsContainer.addChild(skillContainer)
+				})
+
+				skillsContainer.pivot.set(skillsContainer.width / 2, 0)
+				skillsContainer.position.set(projectDescription.width / 2, projectBg.height / 2 - skillsContainer.height - 35)
+			}
+
+			// gif
+			if (project.video) {
+				PIXI.Assets.load(project.video).then((gif) => {
+					gif.height = 192
+					gif.width = 493
+					gif.position.set(-10, projectBg.height - gif.height - 65)
+					projectContentContainer.addChild(gif)
+				});
+			}
+
+			if (project.image) {
+				const image = PIXI.Sprite.from(project.image)
+				image.height = 192
+				image.width = 493
+				image.position.set(-10, projectBg.height - image.height - 65)
+				projectContentContainer.addChild(image)
+			}
+
+			if (!project.image && !project.video) {
+				const text = new PIXI.Text(
+					'No sample available', {
+					fontFamily: headerFont,
+					fontSize: 24,
+					align: 'left',
+					fill: 0xff0000,
+				})
+				text.anchor.set(0.5)
+				text.alpha = 0.5
+				text.position.set(projectDescription.width / 2, projectBg.height * 2 / 3)
+				projectContentContainer.addChild(text)
+			}
+
+			if (project.link) {
+				spawnUIText(projectContentContainer, 0, `to view ${project.name}`, () => {
+					return projectElementsContainer.alpha === 1
+				}, () => {
+					window.open(project.link, '_blank')
+				})
+			}
+
+			projectContentContainer.addChild(projectHeader)
+			projectContentContainer.addChild(projectDescription)
+			projectContentContainer.addChild(skillsContainer)
+
+			projectContentContainer.position.set(bgPadding / 2 - 4, bgPadding / 4)
+			projectElementContainer.addChild(projectBg)
+			projectElementContainer.addChild(projectContentContainer)
+			const line = new Graphics().lineStyle(3, colors.cyanBright, 1).moveTo(0, 0).lineTo(projectBg.width - bgRightMargin, 0)
+			line.position.set(bgLeftMargin, bgTopMargin + projectHeader.height + contentGap)
+
+			projectElementContainer.addChild(line)
+
+			projectElementContainer.position.set(x, y)
+			x = projectElementContainer.x + projectElementContainer.width + gap
+
+			if (i % 2 === 1) {
+				y += projectElementContainer.height + gap
+				x = 0
+			}
+
+			projectElementsContainer.addChild(projectElementContainer)
+		})
+
+		projectElementsContainer.position.set(projectsVisor.width + 170, -110)
+		projectElementsContainer.alpha = 0
+
+
+		projectsContainer.addChild(projectorLightContainer)
+		projectsContainer.addChild(projectsVisorContainer)
+		projectsContainer.addChild(projectElementsContainer)
+
+		projectsContainer.position.set(-projectsVisor.width / 2, -550)
+		bgObjectsContainer.addChild(projectsContainer)
+		let isInRange = false
+		let isOpen = false
+		{
+			let x: (() => void) | undefined
+			const playerDecoder = () => {
+				isInRange = checkCollision(playerContainer, projectsVisorContainer, 50)
+				if (isOpen) {
+					if (x) {
+						x()
+						x = undefined
+					}
+					app.ticker.remove(playerDecoder)
+					return
+				}
+				if (isInRange) {
+					if (playerTutorialCleanupFunction)
+						playerTutorialCleanupFunction()
+
+					if (!x)
+						x = spawnTexts(playerContainer, [`
+						<div class="flex items-center gap-2 text-white font-body text-lg">press <span class="text-cyan-400 corner-border-small font-bold font-header !p-[1px_7px]">F</span> to view projects_</div>
+					`], false)
+				} else {
+					if (x) {
+						x()
+						x = undefined
+					}
+				}
+			}
+			app.ticker.add(playerDecoder)
+		}
+
+		const openProjects = (e: KeyboardEvent) => {
+			if (e.key.toLocaleLowerCase() === 'f' && isInRange) {
+				isOpen = true
+				lightParticles.emit = true
+
+				window.removeEventListener('keydown', openProjects)
+				const tl = gsap.timeline()
+				const elems = [projectorLightContainer, projectElementsContainer]
+				microBlink(elems, tl)
+				microBlink(elems, tl)
+				microBlink(elems, tl)
+				microBlink(elems, tl)
+
+				tl.to(elems, {
+					pixi: { alpha: 0.3 },
+					duration: 0.5,
+					ease: 'steps(1)',
+					onStart: () => {
+						lightParticles.emit = false
+					}
+				})
+
+				tl.to(elems, {
+					pixi: { alpha: 1 },
+					duration: 2,
+					ease: 'steps(1)',
+					onStart: () => {
+						lightParticles.emit = true
+					}
+				})
+			}
+		}
+
+		window.addEventListener('keydown', openProjects)
+	}
 
 	const loadGame = () => {
 		outerGlowLoadingCircle.destroy()
