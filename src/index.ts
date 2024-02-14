@@ -45,9 +45,17 @@ const rad = (degrees: number) => degrees * Math.PI / 180
 const randomFromRange = (min: number, max: number) => Math.random() * (max - min) + min;
 const randomFromArray = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
 
-const checkCollision = (a: PIXI.Container, b: PIXI.Container, padding: number) => {
+const checkCollision = (a: PIXI.Container, b: PIXI.Container, padding: number, point = false) => {
 	const aBounds = a.getBounds()
 	const bBounds = b.getBounds()
+	if (point) {
+		// return from a midpoint only
+		const aMid = a.getGlobalPosition()
+		return aMid.x > bBounds.x - padding &&
+			aMid.x < bBounds.x + bBounds.width + padding &&
+			aMid.y > bBounds.y - padding &&
+			aMid.y < bBounds.y + bBounds.height + padding
+	}
 	return aBounds.x + aBounds.width + padding > bBounds.x &&
 		aBounds.x < bBounds.x + bBounds.width + padding &&
 		aBounds.y + aBounds.height + padding > bBounds.y &&
@@ -295,25 +303,25 @@ const spawnTexts = (display: PIXI.Container, texts: string[], select: boolean = 
 			height: 0,
 			duration: 0.3,
 			ease: 'circ.inOut',
-		}, '>-0.05')
+		})
 	}
 
 	tl.to(textContainerWrapper, {
 		opacity: 1,
-		duration: 0.4,
-	}, select ? '>-0.3' : '')
+		duration: 0.2,
+	})
 
 	if (select)
 		tl.to(displayContainer, {
 			height: h,
 			duration: 0.3,
 			ease: 'circ.inOut',
-		}, '>-0.05')
+		})
 
 	tl.to(textContainer, {
 		width: 'auto',
 		height: 0,
-		duration: 0.3,
+		duration: 0.15,
 		ease: 'circ.inOut',
 
 		onComplete: () => {
@@ -323,13 +331,13 @@ const spawnTexts = (display: PIXI.Container, texts: string[], select: boolean = 
 				})
 			})
 		}
-	}, '>-0.05')
+	})
 
 	tl.to(textContainer, {
 		height: 'auto',
 		duration: 0.3,
 		ease: 'circ.inOut',
-	}, '>-0.05')
+	})
 
 
 	return () => {
@@ -472,6 +480,10 @@ const bodyFont = 'CPMono_Light'
 const init = async () => {
 	await PIXI.Assets.load(fontNames.map(font => `./assets/${font}`))
 
+	// game
+	const gameContainer = new PIXI.Container();
+	gameContainer.name = 'gameContainer'
+
 	const loaderBallContainer = new PIXI.Container();
 	loaderBallContainer.name = 'loaderBallContainer'
 
@@ -576,7 +588,7 @@ const init = async () => {
 	maskSprite.alpha = 0
 
 	let maskSpriteGrowing = gsap.to(maskSprite, {
-		pixi: { width: 600, height: 600 },
+		pixi: { width: 480, height: 480 },
 		duration: 1.5,
 		ease: 'expo.inOut',
 		paused: true,
@@ -613,9 +625,23 @@ const init = async () => {
 
 	let maskSpriteExplosion = gsap.to(maskSprite, {
 		pixi: { width: app.screen.width + 600, height: app.screen.height + 600, alpha: 1 },
-		duration: 1.5,
+		duration: 2.5,
 		ease: 'expo.inOut',
 		paused: true,
+	})
+
+	let gameContainerExplosion = gsap.to(gameContainer, {
+		pixi: { scale: 1, positionX: 0, positionY: 0},
+		duration: 2.5,
+		ease: 'expo.inOut',
+		paused: true,
+		// onUpdate: () => {
+		// 	// fix the pivot point by bringing both the x and y to 0 depending on the current scale
+		// 	gameContainer.pivot.set(
+		// 		-app.screen.width / 2 + ((gameContainer.scale.x - 0.5) / 0.5 * app.screen.width / 2),
+		// 		-app.screen.height / 2 + ((gameContainer.scale.y - 0.5) / 0.5 * app.screen.height / 2)
+		// 	)
+		// }
 	})
 
 	let explosion = gsap.to([outerGlowLoadingCircle, innerGlowLoadingCircle], {
@@ -631,6 +657,7 @@ const init = async () => {
 			isGameLoaded = true
 
 			maskSpriteExplosion.play()
+			gameContainerExplosion.play()
 		},
 		onUpdate: () => {
 			if (explosion.progress() < .3) {
@@ -711,9 +738,6 @@ const init = async () => {
 	loaderBallContainer.addChild(particleContainer);
 	loaderBallContainer.addChild(displacementSprite);
 
-	// game
-	const gameContainer = new PIXI.Container();
-	gameContainer.name = 'gameContainer'
 
 	const starContainer = new PIXI.Container();
 	starContainer.interactiveChildren = false
@@ -728,7 +752,7 @@ const init = async () => {
 	bgContainer.name = 'bgContainer'
 
 	// use an image for the background
-	const bg = await PIXI.Assets.load('./assets/bg.jpg');
+	const bg = await PIXI.Assets.load('./assets/bgNew.jpg');
 	const bgSprite = new PIXI.Sprite(PIXI.Texture.from(bg.baseTexture));
 	// aspect ratio
 	const aspect = bgSprite.texture.baseTexture.width / bgSprite.texture.baseTexture.height //1.5
@@ -863,41 +887,46 @@ const init = async () => {
 
 	app.stage.addChild(loaderBallContainer)
 	app.stage.addChild(gameContainer)
-
-
-	gameContainer.addChild(maskSprite)
+	app.stage.addChild(maskSprite)
 
 	gameContainer.mask = maskSprite
 	let playerTutorialCleanupFunction: () => void
 
+	let uiTexts: any[] = []
 	const spawnUIText = (targetContainer: PIXI.Container, range: number, text: string, openConditional: Function | undefined, onButtonPress: Function | undefined) => {
 		let x: (() => void) | undefined
 		let isInRange = false
 		const playerAction = () => {
-			isInRange = checkCollision(playerContainer, targetContainer, range)
+			isInRange = checkCollision(playerContainer, targetContainer, range, true)
 			if (openConditional) {
 				isInRange = isInRange && openConditional()
 			}
-
-
 
 			if (isInRange) {
 				if (playerTutorialCleanupFunction)
 					playerTutorialCleanupFunction()
 
-				if (!x)
+				if (!x) {
+					uiTexts.forEach((x) => {
+						if (x) x()
+					})
+
 					x = spawnTexts(playerContainer, [`
 					<div class="flex items-center gap-2 text-white font-body text-lg">press <span class="text-cyan-400 corner-border-small font-bold font-header !p-[1px_7px]">F</span> ${text}</div>
 				`], false)
+				}
+
+				uiTexts.push(x)
 			} else {
 				if (x) {
 					x()
+					uiTexts = uiTexts.filter((t) => t !== x)
 					x = undefined
 				}
 			}
 		}
 
-		app.ticker.add(playerAction) 
+		app.ticker.add(playerAction)
 
 		window.addEventListener('keydown', (e) => {
 			if (e.key.toLocaleLowerCase() === 'f' && isInRange && onButtonPress) {
@@ -1054,6 +1083,13 @@ const init = async () => {
 
 			socialAnimations.push(textDecodeAnimationPixijs(text, { duration: 1, updateDelay: 1, finalTint: colors.cyanBright }))
 			socialContainer.eventMode = 'static'
+
+			spawnUIText(socialContainer, 0, `to view ${social.name}`, () => {
+				return isDecoded
+			}, () => {
+				window.open(social.link, '_blank')
+			})
+
 			socialContainer.on('mouseenter', () => {
 				if (isDecoded && socialAnimations[i].progress() === 1) {
 					socialContainer.cursor = 'pointer'
@@ -1091,7 +1127,7 @@ const init = async () => {
 		aboutMeContainer.addChild(headerContainer)
 		aboutMeContainer.addChild(bodyContainer)
 
-		aboutMeContainer.position.set(-1500, -500)
+		aboutMeContainer.position.set(-1500, -300)
 		bgObjectsContainer.addChild(aboutMeContainer)
 
 		// check if player is near the about me section
@@ -1169,7 +1205,7 @@ const init = async () => {
 		const projectsVisorContainer = new PIXI.Container()
 		projectsVisorContainer.name = 'projectsVisorContainer'
 
-		const projectsVisor = PIXI.Sprite.from('./assets/projectsVisor.png')
+		const projectsVisor = PIXI.Sprite.from('./assets/projectsVisor2.png')
 		projectsVisor.width = 660
 		projectsVisor.height = 221
 
@@ -1272,6 +1308,7 @@ const init = async () => {
 		const light = new PIXI.Sprite(PIXI.Texture.from('./assets/projectorLight2.png'))
 		light.width = 320
 		light.height = 360
+		light.tint = colors.cyanBright
 
 
 		const lightParticlesContainer = new PIXI.Container
@@ -1334,7 +1371,7 @@ const init = async () => {
 			const projectContentContainer = new PIXI.Container()
 			projectContentContainer.name = 'projectContentContainer'
 
-			const projectBg = PIXI.Sprite.from('./assets/projectContainer.png')
+			const projectBg = PIXI.Sprite.from('./assets/projectContainer2.png')
 			const aspect = 450 / 390
 			projectBg.width = 600
 			projectBg.height = projectBg.width / aspect
@@ -1422,12 +1459,13 @@ const init = async () => {
 				const text = new PIXI.Text(
 					'No sample available', {
 					fontFamily: headerFont,
-					fontSize: 24,
+					fontSize: 30,
+					fontWeight: 'bold',
 					align: 'left',
-					fill: 0xff0000,
+					fill: 0xff1111,
 				})
 				text.anchor.set(0.5)
-				text.alpha = 0.5
+				text.alpha = 0.75
 				text.position.set(projectDescription.width / 2, projectBg.height * 2 / 3)
 				projectContentContainer.addChild(text)
 			}
@@ -1573,7 +1611,9 @@ const init = async () => {
 			app.ticker.add(y)
 		}
 	}
-
+	// gameContainer.pivot.set(-app.screen.width / 2, -app.screen.height / 2)
+	gameContainer.scale.set(0.5) 
+	gameContainer.position.set(app.screen.width *  gameContainer.scale.x / 2, app.screen.height * gameContainer.scale.y / 2 )
 	// player movement
 	// #region
 	app.ticker.add((delta) => {
@@ -1619,11 +1659,11 @@ const init = async () => {
 		}
 
 		if (a.isDown) {
-			playerContainer.angle -= 1 * delta
+			playerContainer.angle -= 2 * delta
 		}
 
 		if (d.isDown) {
-			playerContainer.angle += 1 * delta
+			playerContainer.angle += 2 * delta
 		}
 
 		moveStarsBg(-playerContainer.velX, -playerContainer.velY)
