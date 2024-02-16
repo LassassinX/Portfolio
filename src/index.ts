@@ -20,6 +20,7 @@ import { PixiPlugin } from 'gsap/PixiPlugin';
 // particles
 import particleConfig from './emitter.json'
 import outerParticleConfig from './emitter-outer.json'
+import playerThrustEmitterConfig from './thrust-emitter.json'
 import projectorEmitterConfig from './projector-emitter.json'
 
 gsap.registerPlugin(PixiPlugin);
@@ -631,7 +632,7 @@ const init = async () => {
 	})
 
 	let gameContainerExplosion = gsap.to(gameContainer, {
-		pixi: { scale: 1, positionX: 0, positionY: 0},
+		pixi: { scale: 1, positionX: 0, positionY: 0 },
 		duration: 2.5,
 		ease: 'expo.inOut',
 		paused: true,
@@ -654,7 +655,7 @@ const init = async () => {
 			outerEmitter.emit = false
 			innerGlowFilter.alpha = 0
 			glowFilter.alpha = 0
-			isGameLoaded = true
+			outerGlowLoadingCircle.eventMode = 'none'
 
 			maskSpriteExplosion.play()
 			gameContainerExplosion.play()
@@ -850,6 +851,8 @@ const init = async () => {
 	player.anchor.set(0.5)
 	player.name = 'player'
 	player.roundPixels = true
+	player.scale.set(0.5)
+
 	const playerContainer = new PIXI.Container() as PIXI.Container & {
 		velX: number,
 		velY: number,
@@ -858,8 +861,6 @@ const init = async () => {
 		getSpeed: () => number,
 	}
 
-	playerContainer.addChild(player)
-	playerContainer.scale.set(0.5)
 	playerContainer.pivot.set(player.width / 2, player.height / 2)
 	playerContainer.position.set(app.screen.width / 2, app.screen.height / 2)
 	playerContainer.name = 'playerContainer'
@@ -876,6 +877,52 @@ const init = async () => {
 
 	playerContainer.zIndex = 100
 
+	const thrustGap = 13
+	const thrustAngle = 10
+	const playerThrustContainer1 = new PIXI.Container()
+	playerThrustContainer1.eventMode = 'none'
+	playerThrustContainer1.angle = -thrustAngle
+
+	const playerThrustParticles1 = new particles.Emitter(
+		playerThrustContainer1,
+		particles.upgradeConfig(
+			playerThrustEmitterConfig,
+			[PIXI.Texture.from('./assets/particle.png'), PIXI.Texture.from('./assets/fire.png')]
+		)
+	)
+
+	playerThrustParticles1.autoUpdate = true
+	playerThrustParticles1.emit = true
+
+	playerThrustContainer1.position.set(thrustGap, 0)
+
+	const playerThrustContainer2 = new PIXI.Container()
+	playerThrustContainer2.eventMode = 'none'
+	playerThrustContainer2.angle = thrustAngle
+
+	const playerThrustParticles2 = new particles.Emitter(
+		playerThrustContainer2,
+		particles.upgradeConfig(
+			playerThrustEmitterConfig,
+			[PIXI.Texture.from('./assets/particle.png'), PIXI.Texture.from('./assets/fire.png')]
+		)
+	)
+
+	playerThrustParticles2.autoUpdate = true
+	playerThrustParticles2.emit = true
+
+	playerThrustContainer2.position.set(-thrustGap, 0)
+
+	const playerThrustContainer = new PIXI.Container()
+	playerThrustContainer.name = 'playerThrustContainer'
+
+	playerThrustContainer.addChild(playerThrustContainer1)
+	playerThrustContainer.addChild(playerThrustContainer2)
+	playerThrustContainer.scale.set(0.5)
+	playerThrustContainer.position.set(0, 4)
+
+	playerContainer.addChild(playerThrustContainer)
+	playerContainer.addChild(player)
 
 	gameContainer.addChild(bgContainer)
 	gameContainer.addChild(starContainer)
@@ -897,7 +944,7 @@ const init = async () => {
 		let x: (() => void) | undefined
 		let isInRange = false
 		const playerAction = () => {
-			isInRange = checkCollision(playerContainer, targetContainer, range, true)
+			isInRange = checkCollision(player, targetContainer, range, true)
 			if (openConditional) {
 				isInRange = isInRange && openConditional()
 			}
@@ -911,7 +958,7 @@ const init = async () => {
 						if (x) x()
 					})
 
-					x = spawnTexts(playerContainer, [`
+					x = spawnTexts(player, [`
 					<div class="flex items-center gap-2 text-white font-body text-lg">press <span class="text-cyan-400 corner-border-small font-bold font-header !p-[1px_7px]">F</span> ${text}</div>
 				`], false)
 				}
@@ -935,6 +982,7 @@ const init = async () => {
 		})
 	}
 	// sections
+	const sections: PIXI.Container[] = []
 	// about me section
 	// #region
 	{
@@ -1017,6 +1065,10 @@ const init = async () => {
 		line.position.set(pictureSquare.x + pictureSquare.width + padding / 2, 0)
 
 		const headerContainer = new PIXI.Container()
+		headerContainer.name = 'headerContainer'
+
+		sections.push(headerContainer)
+
 		aboutMeTitleText.position.set(line.x + line.width + padding / 2, padding / 2)
 
 		// socials 
@@ -1127,7 +1179,7 @@ const init = async () => {
 		aboutMeContainer.addChild(headerContainer)
 		aboutMeContainer.addChild(bodyContainer)
 
-		aboutMeContainer.position.set(-1500, -300)
+		aboutMeContainer.position.set(-2000, -300)
 		bgObjectsContainer.addChild(aboutMeContainer)
 
 		// check if player is near the about me section
@@ -1136,7 +1188,7 @@ const init = async () => {
 		{
 			let x: (() => void) | undefined
 			const playerDecoder = () => {
-				isInRange = checkCollision(playerContainer, aboutMeContainer, 50)
+				isInRange = checkCollision(player, aboutMeContainer, 150)
 				if (isDecoded) {
 					if (x) {
 						x()
@@ -1150,7 +1202,7 @@ const init = async () => {
 						playerTutorialCleanupFunction()
 
 					if (!x)
-						x = spawnTexts(playerContainer, [`
+						x = spawnTexts(player, [`
 						<div class="flex items-center gap-2 text-white font-body text-lg">press <span class="text-cyan-400 corner-border-small font-bold font-header !p-[1px_7px]">F</span> to decode_</div>
 					`], false)
 				} else {
@@ -1188,7 +1240,11 @@ const init = async () => {
 							ease: 'sine.inOut',
 						})
 					}
-				})
+				});
+
+				// transition marker
+				(markers[0] as PIXI.Sprite).texture = PIXI.Texture.from('./assets/markerGreen.png')
+
 			}
 		}
 		window.addEventListener('keydown', decodeAboutMe)
@@ -1208,6 +1264,8 @@ const init = async () => {
 		const projectsVisor = PIXI.Sprite.from('./assets/projectsVisor2.png')
 		projectsVisor.width = 660
 		projectsVisor.height = 221
+
+		sections.push(projectsVisor)
 
 		const projectTextContainer = new PIXI.Container()
 
@@ -1509,14 +1567,14 @@ const init = async () => {
 		projectsContainer.addChild(projectsVisorContainer)
 		projectsContainer.addChild(projectElementsContainer)
 
-		projectsContainer.position.set(-projectsVisor.width / 2, -550)
+		projectsContainer.position.set(-projectsVisor.width / 2, -1000)
 		bgObjectsContainer.addChild(projectsContainer)
 		let isInRange = false
 		let isOpen = false
 		{
 			let x: (() => void) | undefined
 			const playerDecoder = () => {
-				isInRange = checkCollision(playerContainer, projectsVisorContainer, 50)
+				isInRange = checkCollision(player, projectsVisorContainer, 150)
 				if (isOpen) {
 					if (x) {
 						x()
@@ -1530,7 +1588,7 @@ const init = async () => {
 						playerTutorialCleanupFunction()
 
 					if (!x)
-						x = spawnTexts(playerContainer, [`
+						x = spawnTexts(player, [`
 						<div class="flex items-center gap-2 text-white font-body text-lg">press <span class="text-cyan-400 corner-border-small font-bold font-header !p-[1px_7px]">F</span> to view projects_</div>
 					`], false)
 				} else {
@@ -1551,10 +1609,9 @@ const init = async () => {
 				window.removeEventListener('keydown', openProjects)
 				const tl = gsap.timeline()
 				const elems = [projectorLightContainer, projectElementsContainer]
-				microBlink(elems, tl)
-				microBlink(elems, tl)
-				microBlink(elems, tl)
-				microBlink(elems, tl)
+				blink(elems, tl)
+				blink(elems, tl)
+				blink(elems, tl)
 
 				tl.to(elems, {
 					pixi: { alpha: 0.3 },
@@ -1572,18 +1629,73 @@ const init = async () => {
 					onStart: () => {
 						lightParticles.emit = true
 					}
-				})
+				});
+
+				(markers[1] as PIXI.Sprite).texture = PIXI.Texture.from('./assets/markerGreen.png')
 			}
 		}
 
 		window.addEventListener('keydown', openProjects)
 	}
+	//end of sections
+	// make markers for the sections if they are out of view
+	const markersContainer = new PIXI.Container()
+	markersContainer.name = 'markersContainer'
+	markersContainer.position.set(app.screen.width / 2, app.screen.height / 2)
+
+	app.stage.addChild(markersContainer)
+
+	const markers: PIXI.Container[] = []
+	const markerAnimations: gsap.core.Tween[] = []
+
+	sections.forEach(() => {
+		const marker = PIXI.Sprite.from('./assets/marker.png')
+		marker.name = 'marker'
+		marker.anchor.set(0.5)
+		marker.width = 35
+		marker.height = 27
+		markers.push(marker)
+		marker.alpha = 0
+		markerAnimations.push(gsap.to(marker, {
+			pixi: { alpha: 1 },
+			duration: 0.2,
+			ease: 'sine.inOut',
+			paused: true,
+		}))
+		markersContainer.addChild(marker)
+	})
+
+	app.ticker.add((delta) => {
+		let range = 150
+		if (isGameLoaded)
+			markers.forEach((marker, i) => {
+				if (!checkCollision(player, sections[i], range)) {
+					markerAnimations[i].play()
+
+					// spawn a marker on the edge of the screen pointing to the section
+					const angleOfSection = Math.atan2((sections[i].getGlobalPosition().y + sections[i].height / 2) - app.screen.height / 2, (sections[i].getGlobalPosition().x + sections[i].width / 2) - app.screen.width / 2)
+
+
+					// put the marker on the edge of the screen
+					const y = Math.sin(angleOfSection) * range
+					const x = Math.cos(angleOfSection) * range
+
+					marker.position.set(x, y)
+					marker.rotation = angleOfSection + Math.PI / 2
+				} else {
+					markerAnimations[i].reverse()
+				}
+			})
+	})
+
 
 	const loadGame = () => {
+		isGameLoaded = true
 		outerGlowLoadingCircle.destroy()
 		innerGlowLoadingCircle.destroy()
+		ballContainer.destroy()
 
-		playerTutorialCleanupFunction = spawnTexts(playerContainer, [
+		playerTutorialCleanupFunction = spawnTexts(player, [
 			`<div class="grid grid-cols-[1fr_1fr] gap-x-4 gap-y-6 items-center text-white text-lg">
 				<p class="corner-border-small text-cyan-400 font-header font-bold flex items-center justify-center !p-[2px_6px]">W</p>
 				<p data-text="true" class="font-body">Accelerate</p>
@@ -1611,9 +1723,10 @@ const init = async () => {
 			app.ticker.add(y)
 		}
 	}
-	// gameContainer.pivot.set(-app.screen.width / 2, -app.screen.height / 2)
-	gameContainer.scale.set(0.5) 
-	gameContainer.position.set(app.screen.width *  gameContainer.scale.x / 2, app.screen.height * gameContainer.scale.y / 2 )
+	gameContainer.scale.set(0.5)
+	gameContainer.position.set(app.screen.width * gameContainer.scale.x / 2, app.screen.height * gameContainer.scale.y / 2)
+
+	let mlf = 0.05, mf = 0.005, l = 0.4, f = 0.001
 	// player movement
 	// #region
 	app.ticker.add((delta) => {
@@ -1621,13 +1734,26 @@ const init = async () => {
 		// Set your desired maximum speeds for forward and reverse
 		const maxForwardSpeed = 4;
 		const maxReverseSpeed = 1;
-		// Inside the app.ticker.add block
+
+
+		playerThrustParticles1.maxLifetime = mlf
+		playerThrustParticles1.frequency = mf
+
+		playerThrustParticles2.maxLifetime = mlf
+		playerThrustParticles2.frequency = mf
+
 		if (w.isDown || s.isDown) {
 			const angle = playerContainer.rotation;
 			const accelerationX = Math.sin(angle) * acceleration;
 			const accelerationY = -Math.cos(angle) * acceleration;
 
 			if (w.isDown) {
+				playerThrustParticles1.maxLifetime = l
+				playerThrustParticles1.frequency = f
+
+				playerThrustParticles2.maxLifetime = l
+				playerThrustParticles2.frequency = f
+
 				playerContainer.velX += accelerationX;
 				playerContainer.velY += accelerationY;
 
