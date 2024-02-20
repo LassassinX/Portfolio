@@ -38,6 +38,17 @@ As a wanderer of the digital world I navigate as a Full Stack Developer aspiring
 I boarded the spaceship Earth[340] on 12/12/2350. I was on a mission to the Andro${Array.from({ length: 5 }, randChar).join('')} ${Array.from({ length: 8 }, randChar).join('')} ${Array.from({ length: 5 }, randChar).join('')} ${Array.from({ length: 8 }, randChar).join('')}.....>>><<>>>>
 
 ...DROPPED CONNECTION...`,
+
+	entry: `Wander my digital cosmos and experience a 
+figment of my imagination
+
+Activate all the modules to unravel the depths of my being
+and unlock the hidden wonders that lie within`,
+
+	intro: `Enter my domain`,
+
+	quote: `The only limit to our realization of tomorrow will be our doubts of today
+Franklin D. Roosevelt`
 }
 
 // functions
@@ -45,6 +56,43 @@ I boarded the spaceship Earth[340] on 12/12/2350. I was on a mission to the Andr
 const rad = (degrees: number) => degrees * Math.PI / 180
 const randomFromRange = (min: number, max: number) => Math.random() * (max - min) + min;
 const randomFromArray = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
+
+const splitPixiText = (text: PIXI.Text, splitChar: string) => {
+	const splitTexts: PIXI.Text[] = []
+	const lines = text.text.split('\n')
+	text.text = ''
+
+	let h = 0, w = 0
+
+	lines.forEach((line, i) => {
+		const split = line.split(splitChar)
+		const lineContainer = new PIXI.Container()
+		lineContainer.name = `line`
+		lineContainer.position.set(0, h)
+
+		split.forEach((t, i) => {
+			const newText = new PIXI.Text(t, text.style)
+			newText.position.set(w, 0)
+			w += newText.width + text.style.letterSpacing
+			lineContainer.addChild(newText)
+			splitTexts.push(newText)
+		})
+
+		h += text.style.lineHeight
+		w = 0
+
+		text.addChild(lineContainer)
+	})
+
+	if (text.style.align === 'center') {
+		text.children.forEach((line) => {
+			line.position.x -= text.width / 2 + (line as PIXI.Text).width / 2
+		})
+	}
+
+	return ({ text, splitTexts })
+}
+
 
 const checkCollision = (a: PIXI.Container, b: PIXI.Container, padding: number, point = false) => {
 	const aBounds = a.getBounds()
@@ -461,7 +509,7 @@ document.body.appendChild(app.view);
 // #endregion
 
 let isGameLoaded = false
-const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.otf', 'Drexs.ttf', 'ElderFuthark.ttf', 'Entanglement.ttf', 'Megatrans.otf', 'Phalang.otf', 'Rexusdemo.ttf', 'SpaceallyIllustrationRegular.ttf', 'Trueno.otf', 'MandatoryPlaything.ttf', 'NeoLatina.ttf', 'Inertia.otf', 'Astrobia.ttf', 'Beon.ttf', 'CPMono_Black.otf', 'CPMono_Bold.otf', 'CPMono_Light.otf', 'CPMono_ExtraLight.otf', 'CPMono_Plain.otf']
+const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.otf', 'Drexs.ttf', 'ElderFuthark.ttf', 'Entanglement.ttf', 'Megatrans.otf', 'Phalang.otf', 'Rexusdemo.ttf', 'SpaceallyIllustrationRegular.ttf', 'Trueno.otf', 'MandatoryPlaything.ttf', 'NeoLatina.ttf', 'Inertia.otf', 'Astrobia.ttf', 'Beon.ttf', 'CPMono_Black.otf', 'CPMono_Bold.otf', 'CPMono_Light.otf', 'CPMono_ExtraLight.otf', 'CPMono_Plain.otf', 'Qeitlair.ttf', 'Right.ttf', 'AlvendaRegular.ttf']
 const colors = {
 	cyan: 0x93edfd,
 	cyanBright: 0x22d3ee,
@@ -488,6 +536,49 @@ const init = async () => {
 	const loaderBallContainer = new PIXI.Container();
 	loaderBallContainer.name = 'loaderBallContainer'
 
+	const introText = new PIXI.Text(TEXTS.intro, {
+		fontFamily: headerFont,
+		fontSize: 48,
+		fill: colors.cyan,
+		align: 'center',
+		stroke: 0x000000,
+		strokeThickness: 2,
+	});
+
+	loaderBallContainer.addChild(introText)
+	introText.anchor.set(0.5)
+	introText.position.set(app.screen.width / 2, app.screen.height / 2 - 320)
+	introText.alpha = 0
+
+	const introTextAnim = gsap.to(introText, {
+		pixi: { alpha: 1, positionY: app.screen.height / 2 - 350 },
+		paused: true,
+		duration: 1,
+		ease: 'sine.inOut',
+	})
+
+	const hoverText = new PIXI.Text('Hover me', {
+		fontFamily: headerFont,
+		fontSize: 32,
+		fill: 0xffffff,
+		align: 'center',
+		stroke: 0x000000,
+		strokeThickness: 2,
+	});
+	
+	
+	hoverText.anchor.set(0.5)
+	hoverText.position.set(app.screen.width / 2, app.screen.height / 2 + 110)
+	hoverText.alpha = 0
+
+	gsap.to(hoverText, {
+		pixi: { alpha: 1 },
+		duration: 1,
+		delay: 1, 
+		ease: 'sine.inOut',
+	})
+
+	loaderBallContainer.addChild(hoverText)
 
 	const GROW_FACTOR = 5
 	const ballContainer = new PIXI.Container();
@@ -499,8 +590,6 @@ const init = async () => {
 	particleContainer.position = new PIXI.Point(app.screen.width / 2, app.screen.height / 2)
 
 	ballContainer.eventMode = 'static'
-
-
 
 	const emitter = new particles.Emitter(
 		particleContainer,
@@ -616,10 +705,13 @@ const init = async () => {
 					emitter.emit = true
 					outerEmitter.emit = true
 					maskSpriteAlphaAnimation.play()
+					introTextAnim.play()
+
 				} else {
 					emitter.emit = false
 					outerEmitter.emit = false
 					maskSpriteAlphaAnimation.reverse()
+					introTextAnim.reverse()
 				}
 		}
 	});
@@ -636,13 +728,6 @@ const init = async () => {
 		duration: 2.5,
 		ease: 'expo.inOut',
 		paused: true,
-		// onUpdate: () => {
-		// 	// fix the pivot point by bringing both the x and y to 0 depending on the current scale
-		// 	gameContainer.pivot.set(
-		// 		-app.screen.width / 2 + ((gameContainer.scale.x - 0.5) / 0.5 * app.screen.width / 2),
-		// 		-app.screen.height / 2 + ((gameContainer.scale.y - 0.5) / 0.5 * app.screen.height / 2)
-		// 	)
-		// }
 	})
 
 	let explosion = gsap.to([outerGlowLoadingCircle, innerGlowLoadingCircle], {
@@ -674,30 +759,32 @@ const init = async () => {
 		}
 	})
 
-	outerGlowLoadingCircle.on('mouseenter', () => {
-		// use gsap to animate the circle to scale up
-		if (!isGameLoaded) {
-			growing.play()
-			maskSpriteGrowing.play()
-		}
-	})
 
-	outerGlowLoadingCircle.on('mouseleave', () => {
-		// use gsap to animate the circle to scale down
-		if (!isGameLoaded) {
-			growing.reverse()
-			maskSpriteGrowing.reverse()
-		}
-	})
+	{
+		outerGlowLoadingCircle.on('mouseenter', () => {
+			// use gsap to animate the circle to scale up
+			if (!isGameLoaded) {
+				growing.play()
+				maskSpriteGrowing.play()
+			}
+		})
+
+		outerGlowLoadingCircle.on('mouseleave', () => {
+			// use gsap to animate the circle to scale down
+			if (!isGameLoaded) {
+				growing.reverse()
+				maskSpriteGrowing.reverse()
+			}
+		})
 
 
-	outerGlowLoadingCircle.on('mousedown', () => {
-		// explode the circle
-		explosion.play()
-		ballContainer.cursor = 'default'
-		ballContainer.eventMode = 'none'
-	})
-
+		outerGlowLoadingCircle.on('mousedown', () => {
+			// explode the circle
+			explosion.play()
+			ballContainer.cursor = 'default'
+			ballContainer.eventMode = 'none'
+		})
+	}
 	// make the circle glow outwards
 	ballContainer.filters = [
 		glowFilter
@@ -740,6 +827,7 @@ const init = async () => {
 	loaderBallContainer.addChild(displacementSprite);
 
 
+	// game
 	const starContainer = new PIXI.Container();
 	starContainer.interactiveChildren = false
 	starContainer.eventMode = 'none'
@@ -841,6 +929,10 @@ const init = async () => {
 	bgObjectsContainer.name = 'bgObjects'
 	bgObjectsContainer.position.set(app.screen.width / 2, app.screen.height / 2)
 
+	const galaxyObjectsContainer = new PIXI.Container()
+	galaxyObjectsContainer.name = 'GalaxyObjects'
+	galaxyObjectsContainer.position.set(app.screen.width / 2, app.screen.height / 2)
+
 	// player
 	const w = new Keyboard('w')
 	const a = new Keyboard('a')
@@ -926,6 +1018,7 @@ const init = async () => {
 
 	gameContainer.addChild(bgContainer)
 	gameContainer.addChild(starContainer)
+	gameContainer.addChild(galaxyObjectsContainer)
 	gameContainer.addChild(bgObjectsContainer)
 	gameContainer.addChild(playerContainer)
 
@@ -980,14 +1073,109 @@ const init = async () => {
 				onButtonPress()
 			}
 		})
-	}
+	};
+
+	// Decorations
+	// #region
+	const foregroundAnimations: gsap.core.Timeline[] = [];
+
 	// sections
 	const sections: PIXI.Container[] = []
+	const wholeSections: PIXI.Container[] = []
+
+	// welcome text
+	{
+		const welcomeTextContainer = new PIXI.Container()
+		welcomeTextContainer.name = 'welcomeTextContainer'
+		welcomeTextContainer.zIndex = 10
+
+		wholeSections.push(welcomeTextContainer)
+		// body text
+		let bodyText = new PIXI.Text(TEXTS.entry,
+			{
+				fontFamily: 'AlvendaRegular',
+				fontSize: 68,
+				lineHeight: 45,
+				align: 'center',
+				fill: 0xffffff,
+				wordWrap: true,
+				wordWrapWidth: 1500,
+				dropShadow: true,
+				dropShadowAlpha: 1,
+				dropShadowDistance: 10,
+				dropShadowBlur: 3,
+				dropShadowColor: 0x000000,
+				dropShadowAngle: Math.PI / 4,
+			})
+		let bodyTextSplit;
+
+		bodyText.alpha = 1
+		bodyText.anchor.set(0.5)
+		bodyText.position.set(0, 25)
+
+		let quoteText = new PIXI.Text(TEXTS.quote, {
+			fontFamily: 'AlvendaRegular',
+			fontSize: 60,
+			lineHeight: 50,
+			align: 'center',
+			fill: colors.cyanBright,
+			wordWrap: true,
+			wordWrapWidth: 1500,
+			dropShadow: true,
+			dropShadowAlpha: 1,
+			dropShadowDistance: 10,
+			dropShadowBlur: 3,
+			dropShadowColor: 0x000000,
+			dropShadowAngle: Math.PI / 4,
+		})
+
+		let quoteTextSplit;
+		quoteText.alpha = 1
+		quoteText.anchor.set(0.5)
+
+		quoteText.position.set(0, 615);
+
+		({ text: bodyText, splitTexts: bodyTextSplit } = splitPixiText(bodyText, ' '));
+		({ text: quoteText, splitTexts: quoteTextSplit } = splitPixiText(quoteText, ' '));
+
+		welcomeTextContainer.addChild(bodyText)
+		welcomeTextContainer.addChild(quoteText)
+		welcomeTextContainer.position.set(0, -450)
+
+		let tl = gsap.timeline({
+			paused: true,
+		})
+
+		tl.fromTo(bodyTextSplit, {
+			pixi: { alpha: 0, y: 30 },
+		}, {
+			pixi: { alpha: 1, y: 0 },
+			duration: 2.5,
+			stagger: 0.2,
+			ease: 'back(4)',
+		})
+
+		tl.fromTo(quoteTextSplit, {
+			pixi: { alpha: 0, y: 50 },
+		}, {
+			pixi: { alpha: 1, y: 0 },
+			duration: 2,
+			stagger: 0.1,
+			ease: 'back(4)',
+		}, '-=1')
+
+		foregroundAnimations.push(tl)
+
+		bgObjectsContainer.addChild(welcomeTextContainer)
+	}
+
 	// about me section
 	// #region
 	{
 		const aboutMeContainer = new PIXI.Container()
 		aboutMeContainer.name = 'aboutMeContainer'
+		aboutMeContainer.zIndex = 10
+		wholeSections.push(aboutMeContainer)
 
 		const padding = 40
 		const aboutMeTitleText = new PIXI.Text(
@@ -1179,7 +1367,7 @@ const init = async () => {
 		aboutMeContainer.addChild(headerContainer)
 		aboutMeContainer.addChild(bodyContainer)
 
-		aboutMeContainer.position.set(-2000, -300)
+		aboutMeContainer.position.set(-4000, -300)
 		bgObjectsContainer.addChild(aboutMeContainer)
 
 		// check if player is near the about me section
@@ -1256,6 +1444,8 @@ const init = async () => {
 	{
 		const projectsContainer = new PIXI.Container()
 		projectsContainer.name = 'projectsContainer'
+		projectsContainer.zIndex = 10
+		wholeSections.push(projectsContainer)
 
 		// load the projectsBg
 		const projectsVisorContainer = new PIXI.Container()
@@ -1400,7 +1590,7 @@ const init = async () => {
 				description: `Fight off hordes of enemies /̵͇̿̿/'̿'̿ ̿ ̿̿ ̿̿ ̿̿  in this visually appealing fast paced action game for the web.`,
 				skills: ['HTMLCanvas', 'TailwindCSS', 'NextJS', 'AnimeJS', 'Vercel'],
 				link: 'https://gunz.vercel.app/',
-				video: './assets/GunZ.gif',
+				video: './assets/GunZ.mp4',
 			},
 			{
 				name: 'EzNotes',
@@ -1420,6 +1610,8 @@ const init = async () => {
 				skills: ['NextJS', 'TS', 'TailwindCSS', 'PixiJS', 'GSAP', 'Photoshop'],
 			},
 		]
+
+		const videos: HTMLVideoElement[] = []
 
 		let y = 0, gap = 30, contentGap = 20, x = 0, bgPadding = 120, bgTopMargin = 24, bgLeftMargin = 39, bgRightMargin = 65
 		projects.forEach((project, i) => {
@@ -1497,12 +1689,18 @@ const init = async () => {
 
 			// gif
 			if (project.video) {
-				PIXI.Assets.load(project.video).then((gif) => {
-					gif.height = 192
-					gif.width = 493
-					gif.position.set(-10, projectBg.height - gif.height - 65)
-					projectContentContainer.addChild(gif)
-				});
+				let videoTexture = PIXI.Texture.from(project.video)
+
+				let video = new PIXI.Sprite(videoTexture);
+				(video.texture.baseTexture.resource as any).source.loop = true;
+				(video.texture.baseTexture.resource as any).autoPlay = false;
+
+				video.height = 192
+				video.width = 493
+				video.position.set(-10, projectBg.height - video.height - 65)
+				projectContentContainer.addChild(video)
+
+				videos.push((video.texture.baseTexture.resource as any).source)
 			}
 
 			if (project.image) {
@@ -1567,7 +1765,7 @@ const init = async () => {
 		projectsContainer.addChild(projectsVisorContainer)
 		projectsContainer.addChild(projectElementsContainer)
 
-		projectsContainer.position.set(-projectsVisor.width / 2, -1000)
+		projectsContainer.position.set(-projectsVisor.width / 2, -3000)
 		bgObjectsContainer.addChild(projectsContainer)
 		let isInRange = false
 		let isOpen = false
@@ -1631,13 +1829,74 @@ const init = async () => {
 					}
 				});
 
-				(markers[1] as PIXI.Sprite).texture = PIXI.Texture.from('./assets/markerGreen.png')
+
+				(markers[1] as PIXI.Sprite).texture = PIXI.Texture.from('./assets/markerGreen.png');
+				videos.forEach(v => v.play())
 			}
 		}
 
 		window.addEventListener('keydown', openProjects)
 	}
 	//end of sections
+
+	{
+		// debris
+		const debrisContainer = new PIXI.Container()
+		debrisContainer.name = 'debrisContainer'
+		debrisContainer.zIndex = 5
+
+		const debrieSpriteNumber = 5
+
+		const sprites = Array.from({ length: debrieSpriteNumber }, (_, i) => './assets/debris/' + (i + 1) + '.png')
+
+		const DEBRIE_COUNT = 300
+		const range = 5000
+		for (let i = 0; i < DEBRIE_COUNT; i++) {
+			const sprite = PIXI.Sprite.from(randomFromArray(sprites))
+			sprite.anchor.set(0.5)
+			sprite.position.set(randomFromRange(-range, range), randomFromRange(-range, range))
+			wholeSections.forEach((section) => {
+				while (checkCollision(sprite, section, 0)) {
+					sprite.position.set(randomFromRange(-range, range), randomFromRange(-range, range))
+				}
+			})
+
+			sprite.alpha = 1
+			sprite.scale.set(randomFromRange(0.5, 1))
+			sprite.zIndex = 5
+			sprite.cullable = true
+			sprite.rotation = randomFromRange(0, Math.PI * 2)
+			sprite.tint = randomFromArray([colors.cyanBright, colors.orange, '#ffffff'])
+			debrisContainer.addChild(sprite)
+		}
+
+
+		// some galaxies
+		const makeGalaxy = (url: string, x: number, y: number, scale: number, alpha = 1) => {
+			const galaxy = PIXI.Sprite.from('./assets/galaxies/' + url)
+			galaxy.anchor.set(0.5)
+			galaxy.position.set(x, y)
+			galaxy.scale.set(scale, scale)
+			galaxy.alpha = alpha
+			// galaxy.roundPixels = true
+			return galaxy
+		}
+
+		galaxyObjectsContainer.addChild(makeGalaxy('white.png', -500, -1200, 1.4))
+		galaxyObjectsContainer.addChild(makeGalaxy('blue2.png', 250, -900, 0.8))
+
+		galaxyObjectsContainer.addChild(makeGalaxy('blue.png', -1200, -400, 0.4))
+
+		galaxyObjectsContainer.addChild(makeGalaxy('milkyWay.png', -1300, 200, 1.1))
+		galaxyObjectsContainer.addChild(makeGalaxy('fox.png', -2200, -200, 0.35, 0.4))
+
+		galaxyObjectsContainer.addChild(makeGalaxy('purple.png', 1200, 800, 1.4))
+
+		debrisContainer.position.set(-app.screen.width / 2, -app.screen.height / 2)
+		galaxyObjectsContainer.position.set(app.screen.width / 2, app.screen.height / 2)
+		bgObjectsContainer.addChild(debrisContainer)
+	}
+	// #endregion
 	// make markers for the sections if they are out of view
 	const markersContainer = new PIXI.Container()
 	markersContainer.name = 'markersContainer'
@@ -1693,7 +1952,11 @@ const init = async () => {
 		isGameLoaded = true
 		outerGlowLoadingCircle.destroy()
 		innerGlowLoadingCircle.destroy()
-		ballContainer.destroy()
+		loaderBallContainer.removeFromParent()
+		loaderBallContainer.destroy()
+
+		foregroundAnimations.forEach((anim) => anim.play())
+		bgObjectsContainer.sortChildren()
 
 		playerTutorialCleanupFunction = spawnTexts(player, [
 			`<div class="grid grid-cols-[1fr_1fr] gap-x-4 gap-y-6 items-center text-white text-lg">
@@ -1730,17 +1993,19 @@ const init = async () => {
 	// player movement
 	// #region
 	app.ticker.add((delta) => {
-		let acceleration = 0.05 * delta
-		// Set your desired maximum speeds for forward and reverse
-		const maxForwardSpeed = 4;
-		const maxReverseSpeed = 1;
-
-
 		playerThrustParticles1.maxLifetime = mlf
 		playerThrustParticles1.frequency = mf
 
 		playerThrustParticles2.maxLifetime = mlf
 		playerThrustParticles2.frequency = mf
+
+		if (!isGameLoaded) return
+
+		let acceleration = 0.05 * delta
+		// Set your desired maximum speeds for forward and reverse
+		const maxForwardSpeed = 4;
+		const maxReverseSpeed = 1;
+
 
 		if (w.isDown || s.isDown) {
 			const angle = playerContainer.rotation;
@@ -1792,9 +2057,9 @@ const init = async () => {
 			playerContainer.angle += 2 * delta
 		}
 
-		moveStarsBg(-playerContainer.velX, -playerContainer.velY)
+		moveBg(-playerContainer.velX, -playerContainer.velY)
 	})
-	const moveStarsBg = (velX: number, velY: number) => {
+	const moveBg = (velX: number, velY: number) => {
 		starContainer.children.forEach((star) => {
 			star.x += velX * 0.05 * star.zIndex / 2
 			star.y += velY * 0.05 * star.zIndex / 2
@@ -1816,6 +2081,11 @@ const init = async () => {
 			bgObject.x += velX
 			bgObject.y += velY
 		})
+
+		galaxyObjectsContainer.children.forEach((planet) => {
+			planet.x += velX * 0.5
+			planet.y += velY * 0.5
+		})
 	}
 	// #endregion
 
@@ -1833,7 +2103,20 @@ const init = async () => {
 	// #endregion
 }
 
-init()
+const start = async () => {
+	await init()
+	gsap.to('#loader', {
+		opacity: 0,
+		duration: 1,
+		ease: 'power2.inOut',
+		onComplete: () => {
+			document.querySelector('#loader')?.remove()
+		}
+	})
+	// loadingText.text = 'Hover me'
+}
+
+start()
 
 // @ts-ignore
 globalThis.__PIXI_APP__ = app;

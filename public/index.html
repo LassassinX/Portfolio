@@ -93,38 +93,297 @@
 		}
 
 		@font-face {
-			font-family:'CPMono_Black';
+			font-family: 'CPMono_Black';
 			src: url('/assets/CPMono_Black.otf');
 		}
 
 		@font-face {
-			font-family:'CPMono_Bold';
+			font-family: 'CPMono_Bold';
 			src: url('/assets/CPMono_Bold.otf');
 		}
 
 		@font-face {
-			font-family:'CPMono_Light';
+			font-family: 'CPMono_Light';
 			src: url('/assets/CPMono_Light.otf');
 		}
 
 		@font-face {
-			font-family:'CPMono';
+			font-family: 'CPMono';
 			src: url('/assets/CPMono_Plain.otf');
 		}
 
 		@font-face {
-			font-family:'CPMono_ExtraLight';
+			font-family: 'CPMono_ExtraLight';
 			src: url('/assets/CPMono_ExtraLight.otf');
 		}
+	</style>
 
+	<style>
+		/* KEYFRAMES */
+
+		@keyframes spin {
+			from {
+				transform: rotate(0);
+			}
+
+			to {
+				transform: rotate(359deg);
+			}
+		}
+
+		@keyframes spin3D {
+			from {
+				transform: rotate3d(.5, .5, .5, 360deg);
+			}
+
+			to {
+				transform: rotate3d(0deg);
+			}
+		}
+
+		@keyframes configure-clockwise {
+			0% {
+				transform: rotate(0);
+			}
+
+			25% {
+				transform: rotate(90deg);
+			}
+
+			50% {
+				transform: rotate(180deg);
+			}
+
+			75% {
+				transform: rotate(270deg);
+			}
+
+			100% {
+				transform: rotate(360deg);
+			}
+		}
+
+		@keyframes configure-xclockwise {
+			0% {
+				transform: rotate(45deg);
+			}
+
+			25% {
+				transform: rotate(-45deg);
+			}
+
+			50% {
+				transform: rotate(-135deg);
+			}
+
+			75% {
+				transform: rotate(-225deg);
+			}
+
+			100% {
+				transform: rotate(-315deg);
+			}
+		}
+
+		@keyframes pulse {
+			from {
+				opacity: 1;
+				transform: scale(1);
+			}
+
+			to {
+				opacity: .25;
+				transform: scale(.75);
+			}
+		}
+
+		/* GRID STYLING */
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			min-height: 100vh;
+			background-color: #1d2630;
+			display: flex;
+			justify-content: space-between;
+			flex-wrap: wrap;
+			align-items: flex-start;
+		}
+
+		.spinner-box {
+			width: 300px;
+			height: 300px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background-color: transparent;
+		}
+
+		/* SPINNING CIRCLE */
+
+		.leo-border-1 {
+			position: absolute;
+			width: 150px;
+			height: 150px;
+			padding: 3px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border-radius: 50%;
+			background: rgb(63, 249, 220);
+			background: linear-gradient(0deg, rgba(63, 249, 220, 0.1) 33%, rgba(63, 249, 220, 1) 100%);
+			animation: spin3D 1.8s linear 0s infinite;
+		}
+
+		.leo-core-1 {
+			width: 100%;
+			height: 100%;
+			background-color: #37474faa;
+			border-radius: 50%;
+		}
+
+		.leo-border-2 {
+			position: absolute;
+			width: 150px;
+			height: 150px;
+			padding: 3px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border-radius: 50%;
+			background: rgb(251, 91, 83);
+			background: linear-gradient(0deg, rgba(251, 91, 83, 0.1) 33%, rgba(251, 91, 83, 1) 100%);
+			animation: spin3D 2.2s linear 0s infinite;
+		}
+
+		.leo-core-2 {
+			width: 100%;
+			height: 100%;
+			background-color: #1d2630aa;
+			border-radius: 50%;
+		}
+
+		/* ALTERNATING ORBITS */
+
+		.circle-border {
+			width: 150px;
+			height: 150px;
+			padding: 3px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border-radius: 50%;
+			background: rgb(63, 249, 220);
+			background: linear-gradient(0deg, rgba(63, 249, 220, 0.1) 33%, rgba(63, 249, 220, 1) 100%);
+			animation: spin .8s linear 0s infinite;
+		}
+
+		.circle-core {
+			width: 100%;
+			height: 100%;
+			background-color: #1d2630;
+			border-radius: 50%;
+		}
+
+		/* X-ROTATING BOXES */
+
+		.configure-border-1 {
+			width: 115px;
+			height: 115px;
+			padding: 3px;
+			position: absolute;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background: #fb5b53;
+			animation: configure-clockwise 3s ease-in-out 0s infinite alternate;
+		}
+
+		.configure-border-2 {
+			width: 115px;
+			height: 115px;
+			padding: 3px;
+			left: -115px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background: rgb(63, 249, 220);
+			transform: rotate(45deg);
+			animation: configure-xclockwise 3s ease-in-out 0s infinite alternate;
+		}
+
+		.configure-core {
+			width: 100%;
+			height: 100%;
+			background-color: #1d2630;
+		}
+
+
+		.three-quarter-spinner {
+			width: 50px;
+			height: 50px;
+			border: 3px solid #fb5b53;
+			border-top: 3px solid transparent;
+			border-radius: 50%;
+			animation: spin .5s linear 0s infinite;
+		}
 	</style>
 </head>
 
 <body class="bg-black overflow-hidden">
 	<canvas id="gameCanvas" class="absolute top-0 left-0">
 	</canvas>
+	<div class="spinner-box absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10" id="loader">
+		<div class="configure-border-1 bg-transparent border-cyan-400 border-4 border-opacity-60">
+		</div>
+		<div class="configure-border-2 bg-transparent border-cyan-400 border-4 border-opacity-20">
+		</div>
+	</div>
+	<footer class="absolute font-body flex z-10 justify-between items-center p-2 bg-opacity-0 backdrop-blur-md bottom-0 left-0 w-full text-center text-white
+			flex-col gap-2	
+		sm:flex-row
+		">
+		<div class="hidden sm:invisible xl:block">
+			<!-- view simple version -->
+			<a href="https://www.github.com/LassassinX" class="text-cyan-400">View Simple Version</a>
+		</div>
+		<div class="flex gap-2 items-center flex-col sm:flex-row">
+			<p class="text-base">Designed & Developed by
+				<a class="text-cyan-400" href="https://www.github.com/LassassinX">Sanjid
+					Chowdhury</a>
+			</p>
+			<!-- big dot -->
+			<!-- <div class="w-1 h-1 opacity-50 bg-cyan-400 rounded-full mx-2"></div> -->
+			<!-- vertical rule -->
+			<div class="w-0.5 h-5 opacity-50 bg-cyan-400 mx-2 hidden sm:block"></div>
+			<!-- social media -->
+			<div
+				class="flex gap-2 items-center [&_i]:text-xl [&_i]:text-white [&_i]:transition-all [&_i:hover]:text-cyan-400">
+				<a href="https://www.github.com/LassassinX">
+					<i class="fa-brands fa-github"></i>
+				</a>
+				<div class="w-1 h-1 opacity-50 bg-white rounded-full"></div>
 
+				<a href="https://www.facebook.com/LassassinX">
+					<i class="fa-brands fa-facebook"></i>
+				</a>
+				<div class="w-1 h-1 opacity-50 bg-white rounded-full"></div>
+
+				<a href="https://www.linkedin.com/in/sanjid-chowdhury-509a57177/">
+					<i class="fa-brands fa-linkedin"></i>
+				</a>
+			</div>
+		</div>
+
+		<div class="text-sm">
+			<!-- view simple version -->
+			<a href="https://www.github.com/LassassinX" class="text-cyan-400">View simple version</a>
+		</div>
+	</footer>
 	<script src="index.js"></script>
+	<script src="https://kit.fontawesome.com/c83c06d7e0.js" crossorigin="anonymous"></script>
 </body>
 
 </html>
