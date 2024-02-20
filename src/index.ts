@@ -879,8 +879,60 @@ const init = async () => {
 
 	// density of stars should be based on screen size, 15 per 100000px
 	const STAR_COUNT = Math.floor((app.screen.width * app.screen.height)) * 20 / 100000
-	console.log(STAR_COUNT)
+		// if (!playerMoving && !constellationFormed) {
+		// 	// draw constelations
+		// 	constellationFormed = true
 
+		// 	const CONSTELLATION_GAP = 60
+		// 	const CONSTELLATION_SIZE = 3
+
+		// 	starContainer.children.forEach((star, i) => {
+		// 		(star as any).isConstellation = false
+		// 	})
+
+		// 	starContainer.children.forEach((star, i) => {
+		// 		// get a star and find the closest CONSTELLATION_SIZE of stars
+		// 		if (!(star as any).isConstellation) {
+		// 			(star as any).isConstellation = true
+
+		// 			let count = 0
+
+		// 			const closestStars = starContainer.children.filter((s, j) => {
+		// 				if (i === j) return false
+		// 				// debugger
+		// 				return getDistance(star, s) < CONSTELLATION_GAP && count++ < CONSTELLATION_SIZE
+		// 			});
+
+		// 			const line = new Graphics().lineStyle(1, colors.cyanBright, 1).moveTo(star.x, star.y);
+		// 			line.alpha = 0
+		// 			// form a constellation
+		// 			closestStars.forEach((s) => {
+		// 				(s as any).isConstellation = true
+		// 				line.lineTo(s.x, s.y)
+		// 			})
+
+		// 			line.name = 'constellation'
+		// 			line.zIndex = -1
+
+		// 			gsap.to(line, {
+		// 				pixi: { alpha: 0.3 },
+		// 				duration: 3,
+		// 				ease: 'sine.inOut',
+		// 			})
+
+		// 			starContainer.addChild(line)
+		// 		}
+		// 	})
+
+		// 	starContainer.sortChildren()
+		// } else if (playerMoving) {
+		// 	// remove constellations
+		// 	while (starContainer.getChildAt(0).name === 'constellation') {
+		// 		starContainer.removeChildAt(0)
+		// 	}
+
+		// 	constellationFormed = false
+		// }
 	for (let i = 0; i < STAR_COUNT; i++) {
 		const minSize = 4
 		const maxSize = 20
