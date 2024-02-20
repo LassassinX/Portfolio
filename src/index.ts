@@ -111,7 +111,7 @@ const checkCollision = (a: PIXI.Container, b: PIXI.Container, padding: number, p
 		aBounds.y < bBounds.y + bBounds.height + padding
 }
 
-const getDistance = (a: PIXI.Container, b: PIXI.Container) => {
+const getDistance = (a: PIXI.DisplayObject, b: PIXI.DisplayObject) => {
 	const dx = a.getGlobalPosition().x - b.getGlobalPosition().x
 	const dy = a.getGlobalPosition().y - b.getGlobalPosition().y
 	return Math.sqrt(dx * dx + dy * dy)
@@ -513,6 +513,7 @@ const fontNames = ['Agelast.otf', 'Andromeda.ttf', 'Demora.otf', 'DemoraItalic.o
 const colors = {
 	cyan: 0x93edfd,
 	cyanBright: 0x22d3ee,
+	cyanBrightest: 0xa5f3fc,
 	// greenCyan: 0x7fffd4,
 	green: 0x00ff5e,
 	orangeRed: 0xff4500,
@@ -565,8 +566,8 @@ const init = async () => {
 		stroke: 0x000000,
 		strokeThickness: 2,
 	});
-	
-	
+
+
 	hoverText.anchor.set(0.5)
 	hoverText.position.set(app.screen.width / 2, app.screen.height / 2 + 110)
 	hoverText.alpha = 0
@@ -574,7 +575,7 @@ const init = async () => {
 	gsap.to(hoverText, {
 		pixi: { alpha: 1 },
 		duration: 1,
-		delay: 1, 
+		delay: 1,
 		ease: 'sine.inOut',
 	})
 
@@ -615,10 +616,11 @@ const init = async () => {
 
 	const displacementSprite = PIXI.Sprite.from('https://pixijs.com/assets/pixi-filters/displacement_map_repeat.jpg');
 	displacementSprite.texture.baseTexture.wrapMode = PIXI.WRAP_MODES.REPEAT;
-
+	displacementSprite.name = 'displacementSprite'
 	const displacementFilter = new PIXI.DisplacementFilter(displacementSprite);
 	displacementFilter.padding = 200;
 
+	app.stage.addChild(displacementSprite);
 	app.stage.filters = [displacementFilter];
 
 	const glowFilter = new GlowFilter({
@@ -824,7 +826,6 @@ const init = async () => {
 
 	loaderBallContainer.addChild(ballContainer);
 	loaderBallContainer.addChild(particleContainer);
-	loaderBallContainer.addChild(displacementSprite);
 
 
 	// game
@@ -835,6 +836,10 @@ const init = async () => {
 	starContainer.width = app.screen.width
 	starContainer.height = app.screen.height
 	starContainer.name = 'starContainer'
+
+	const constellationContainer = new PIXI.Container();
+	constellationContainer.name = 'constellationContainer'
+	constellationContainer.alpha = 0
 
 	// add a background
 	const bgContainer = new PIXI.Container();
@@ -879,60 +884,6 @@ const init = async () => {
 
 	// density of stars should be based on screen size, 15 per 100000px
 	const STAR_COUNT = Math.floor((app.screen.width * app.screen.height)) * 20 / 100000
-		// if (!playerMoving && !constellationFormed) {
-		// 	// draw constelations
-		// 	constellationFormed = true
-
-		// 	const CONSTELLATION_GAP = 60
-		// 	const CONSTELLATION_SIZE = 3
-
-		// 	starContainer.children.forEach((star, i) => {
-		// 		(star as any).isConstellation = false
-		// 	})
-
-		// 	starContainer.children.forEach((star, i) => {
-		// 		// get a star and find the closest CONSTELLATION_SIZE of stars
-		// 		if (!(star as any).isConstellation) {
-		// 			(star as any).isConstellation = true
-
-		// 			let count = 0
-
-		// 			const closestStars = starContainer.children.filter((s, j) => {
-		// 				if (i === j) return false
-		// 				// debugger
-		// 				return getDistance(star, s) < CONSTELLATION_GAP && count++ < CONSTELLATION_SIZE
-		// 			});
-
-		// 			const line = new Graphics().lineStyle(1, colors.cyanBright, 1).moveTo(star.x, star.y);
-		// 			line.alpha = 0
-		// 			// form a constellation
-		// 			closestStars.forEach((s) => {
-		// 				(s as any).isConstellation = true
-		// 				line.lineTo(s.x, s.y)
-		// 			})
-
-		// 			line.name = 'constellation'
-		// 			line.zIndex = -1
-
-		// 			gsap.to(line, {
-		// 				pixi: { alpha: 0.3 },
-		// 				duration: 3,
-		// 				ease: 'sine.inOut',
-		// 			})
-
-		// 			starContainer.addChild(line)
-		// 		}
-		// 	})
-
-		// 	starContainer.sortChildren()
-		// } else if (playerMoving) {
-		// 	// remove constellations
-		// 	while (starContainer.getChildAt(0).name === 'constellation') {
-		// 		starContainer.removeChildAt(0)
-		// 	}
-
-		// 	constellationFormed = false
-		// }
 	for (let i = 0; i < STAR_COUNT; i++) {
 		const minSize = 4
 		const maxSize = 20
@@ -945,6 +896,7 @@ const init = async () => {
 		starSprite.x = x;
 		starSprite.y = y;
 		starSprite.zIndex = size;
+		starSprite.name = `star${i}`
 
 		const finalAlpha = 1 * starSprite.zIndex / (maxSize - 1)
 		gsap.to(starSprite, {
@@ -975,6 +927,8 @@ const init = async () => {
 		starSprite.cullable = true
 		starContainer.addChild(starSprite);
 	}
+
+	starContainer.sortChildren()
 
 	// bg objects
 	const bgObjectsContainer = new PIXI.Container()
@@ -1070,6 +1024,7 @@ const init = async () => {
 
 	gameContainer.addChild(bgContainer)
 	gameContainer.addChild(starContainer)
+	gameContainer.addChild(constellationContainer)
 	gameContainer.addChild(galaxyObjectsContainer)
 	gameContainer.addChild(bgObjectsContainer)
 	gameContainer.addChild(playerContainer)
@@ -2041,7 +1996,13 @@ const init = async () => {
 	gameContainer.scale.set(0.5)
 	gameContainer.position.set(app.screen.width * gameContainer.scale.x / 2, app.screen.height * gameContainer.scale.y / 2)
 
-	let mlf = 0.05, mf = 0.005, l = 0.4, f = 0.001
+	let mlf = 0.05, mf = 0.005, l = 0.4, f = 0.001, constellationFormed = false
+	const revealConstellations = gsap.to(constellationContainer, {
+		pixi: { alpha: 0.25 },
+		duration: 1,
+		ease: 'sine.inOut',
+		paused: true,
+	})
 	// player movement
 	// #region
 	app.ticker.add((delta) => {
@@ -2107,6 +2068,68 @@ const init = async () => {
 
 		if (d.isDown) {
 			playerContainer.angle += 2 * delta
+		}
+
+		let playerMoving = playerContainer.getSpeed() > 0.01
+		if (!playerMoving && !constellationFormed) {
+			// draw constelations
+			constellationFormed = true
+			const constellationsPer100Stars = 7
+			const numberOfConstellations = Math.floor(starContainer.children.length / 100 * constellationsPer100Stars)
+
+			starContainer.children.forEach((star, i) => {
+				(star as any).isConstellation = false
+			})
+
+			for (let i = 0; i < numberOfConstellations; i++) {
+				const star = randomFromArray(starContainer.children)
+				if (!(star as any).isConstellation) {
+
+					let count = 0
+					let currentStar = star
+
+					const line = new Graphics().lineStyle(1.5, colors.cyanBright, 1).moveTo(currentStar.x, currentStar.y);
+					line.name = 'constellation';
+					constellationContainer.addChild(line);
+					const CONSTELLATION_SIZE = randomFromRange(3, 7)
+
+					while (count < CONSTELLATION_SIZE) {
+						count++
+
+						// get the next closest star
+						let closestStar: PIXI.DisplayObject | undefined
+						let closestDistance = Infinity
+						for (let j = 0; j < starContainer.children.length; j++) {
+							const s = starContainer.children[j]
+							if (s === currentStar || (s as any).isConstellation) continue
+
+							if (getDistance(currentStar, s) < closestDistance) {
+								closestDistance = getDistance(currentStar, s)
+								closestStar = s
+							}
+						}
+
+						if (!closestStar) continue;
+
+						line.lineTo(closestStar.x, closestStar.y);
+
+						(currentStar as any).isConstellation = true;
+						currentStar = closestStar
+					}
+				}
+
+			}
+
+
+			revealConstellations.play()
+
+		} else if (playerMoving) {
+			constellationFormed = false
+
+			// remove constellations
+			revealConstellations.reverse().then(() => {
+				constellationContainer.removeChildren()
+			})
 		}
 
 		moveBg(-playerContainer.velX, -playerContainer.velY)
