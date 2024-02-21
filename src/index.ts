@@ -1330,6 +1330,12 @@ const init = async () => {
 				}
 			})
 
+			spawnUIText(socialContainer, 0, `to view ${social.name}`, () => {
+				return isDecoded
+			}, () => {
+				window.open(social.link, '_blank')
+			})
+
 			return socialContainer
 		}
 
@@ -1339,12 +1345,6 @@ const init = async () => {
 
 			socialContainer.position.set(prevSocial ? prevSocial.x + prevSocial.width + gap : 0, 0)
 			prevSocial = socialContainer
-
-			spawnUIText(socialContainer, 0, `to view ${social.name}`, () => {
-				return isDecoded
-			}, () => {
-				window.open(social.link, '_blank')
-			})
 
 			socialsContainer.addChild(socialContainer)
 		})
