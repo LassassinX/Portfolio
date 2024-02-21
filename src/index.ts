@@ -1188,12 +1188,14 @@ const init = async () => {
 		const aboutMeTitleText = new PIXI.Text(
 			'About Me', {
 			fontFamily: headerFont,
-			fontSize: 32,
+			fontSize: 52,
 			align: 'left',
 			fill: colors.cyanBright,
 			wordWrap: true,
 			wordWrapWidth: 700,
 		})
+
+		aboutMeTitleText.position.set(353, 70)
 
 		const aboutMeBodyText = new PIXI.Text(
 			TEXTS.aboutMe, {
@@ -1228,50 +1230,29 @@ const init = async () => {
 
 		aboutMeBodyText.mask = bodyBgMask
 
-		const titleBg = makeRect({
-			width: aboutMeBodyText.width + padding,
-			height: 140 + padding,
-			color: 0x000000,
-			alpha: 0.5,
-			cornerSize: 15,
-			cornerThickness: 3,
-		})
+		const titleBg = PIXI.Sprite.from('./assets/CodexVisor.png')
+		titleBg.width = 939
+		titleBg.height = 320 
 
-		// make a picture square of 140
-		const pictureSquare = makeRect({
-			width: 140,
-			height: 140,
-			alpha: 0,
-			borderThickness: 2,
-			borderColor: colors.cyanBright,
-		})
-
-
-		pictureSquare.position.set(padding / 2, padding / 2)
 
 		// load the question mark
-		const questionMark = PIXI.Sprite.from('./assets/question.png')
-		questionMark.width = 100
-		questionMark.height = 100
-		pictureSquare.addChild(questionMark)
-		questionMark.position.set(padding / 2, padding / 2)
-
-		const line = new Graphics().lineStyle(2, colors.cyanBright, 1).moveTo(0, 0).lineTo(0, titleBg.height)
-		line.position.set(pictureSquare.x + pictureSquare.width + padding / 2, 0)
+		const photo = PIXI.Sprite.from('./assets/question.png')
+		photo.width = 120
+		photo.height = 120
+		photo.anchor.set(0.5)
+		photo.position.set(142, 162)
 
 		const headerContainer = new PIXI.Container()
 		headerContainer.name = 'headerContainer'
 
 		sections.push(headerContainer)
 
-		aboutMeTitleText.position.set(line.x + line.width + padding / 2, padding / 2)
-
 		// socials 
 		const socials = [
 			{ name: 'Github', link: `https://github.com/LassassinX` },
 			{ name: 'Linkedin', link: `https://www.linkedin.com/in/sanjid-chowdhury-509a57177/` },
 			{ name: 'Facebook', link: `https://www.facebook.com/LassassinX/` },
-			{ name: 'Resume/CV', link: `` },
+			{ name: 'Email', link: `mailto:sanjid8426@gmail.com`}
 		]
 
 		const socialsContainer = new PIXI.Container()
@@ -1279,14 +1260,14 @@ const init = async () => {
 
 		let prevSocial: PIXI.Container | undefined
 		let socialAnimations: gsap.core.Tween[] = []
-		socials.forEach((social, i) => {
-			let padding = 20
-			let gap = 20
+
+		const makeSocialContainer = (social: any) => {
+			let padding = 17
 			const socialContainer = new PIXI.Container()
 			const text = new PIXI.Text(
 				social.name, {
 				fontFamily: bodyFont,
-				fontSize: 18,
+				fontSize: 20,
 				align: 'left',
 				fill: 0xffffff,
 			})
@@ -1325,11 +1306,39 @@ const init = async () => {
 			socialContainer.addChild(bg2)
 			socialContainer.addChild(bgMask)
 			socialContainer.addChild(text)
+			const anim = textDecodeAnimationPixijs(text, { duration: 1, updateDelay: 1, finalTint: colors.cyanBright })
+			socialAnimations.push(anim)
+
+			socialContainer.eventMode = 'static'
+
+			socialContainer.on('mouseenter', () => {
+				if (isDecoded && anim.progress() === 1) {
+					socialContainer.cursor = 'pointer'
+				}
+
+				if (anim.progress() === 1)
+					gsap.to(bg2, { pixi: { alpha: 1 }, duration: 0.2, ease: 'sine.inOut' })
+			})
+			socialContainer.on('mouseleave', () => {
+				if (anim.progress() === 1)
+					gsap.to(bg2, { pixi: { alpha: 0 }, duration: 0.2, ease: 'sine.inOut' })
+			})
+
+			socialContainer.on('mousedown', () => {
+				if (isDecoded && anim.progress() === 1) {
+					window.open(social.link, '_blank')
+				}
+			})
+
+			return socialContainer
+		}
+
+		socials.forEach((social, i) => {
+			let gap = 20
+			const socialContainer = makeSocialContainer(social)
+
 			socialContainer.position.set(prevSocial ? prevSocial.x + prevSocial.width + gap : 0, 0)
 			prevSocial = socialContainer
-
-			socialAnimations.push(textDecodeAnimationPixijs(text, { duration: 1, updateDelay: 1, finalTint: colors.cyanBright }))
-			socialContainer.eventMode = 'static'
 
 			spawnUIText(socialContainer, 0, `to view ${social.name}`, () => {
 				return isDecoded
@@ -1337,31 +1346,15 @@ const init = async () => {
 				window.open(social.link, '_blank')
 			})
 
-			socialContainer.on('mouseenter', () => {
-				if (isDecoded && socialAnimations[i].progress() === 1) {
-					socialContainer.cursor = 'pointer'
-				}
-
-				if (socialAnimations[i].progress() === 1)
-					gsap.to(bg2, { pixi: { alpha: 1 }, duration: 0.2, ease: 'sine.inOut' })
-			})
-			socialContainer.on('mouseleave', () => {
-				if (socialAnimations[i].progress() === 1)
-					gsap.to(bg2, { pixi: { alpha: 0 }, duration: 0.2, ease: 'sine.inOut' })
-			})
-
-			socialContainer.on('mousedown', () => {
-				if (isDecoded && socialAnimations[i].progress() === 1) {
-					window.open(social.link, '_blank')
-				}
-			})
 			socialsContainer.addChild(socialContainer)
 		})
 
-		socialsContainer.position.set(aboutMeTitleText.x, titleBg.height - socialsContainer.height - padding / 2)
+		const resumeSocialContainer = makeSocialContainer({ name: 'Resume / CV', link: `https://drive.google.com/file/d/1Z` })
+		resumeSocialContainer.position.set(socialsContainer.width/2 - resumeSocialContainer.width/2, socialsContainer.height + padding / 2)
+		socialsContainer.addChild(resumeSocialContainer)
+		socialsContainer.position.set(aboutMeTitleText.x + aboutMeTitleText.width/2 - socialsContainer.width/2, aboutMeTitleText.y + aboutMeTitleText.height + 25)
 		headerContainer.addChild(titleBg)
-		headerContainer.addChild(line)
-		headerContainer.addChild(pictureSquare)
+		headerContainer.addChild(photo)
 		headerContainer.addChild(aboutMeTitleText)
 		headerContainer.addChild(socialsContainer)
 
@@ -1369,7 +1362,7 @@ const init = async () => {
 		bodyContainer.addChild(bodyBg)
 		bodyContainer.addChild(bodyBgMask)
 		bodyContainer.addChild(aboutMeBodyText)
-		bodyContainer.position.set(0, titleBg.height + padding / 2)
+		bodyContainer.position.set(headerContainer.width/2 - bodyContainer.width/2 + 10, titleBg.height + padding)
 
 		aboutMeContainer.addChild(headerContainer)
 		aboutMeContainer.addChild(bodyContainer)
@@ -1420,16 +1413,16 @@ const init = async () => {
 				decodeBodyText.play()
 				socialAnimations.forEach(anim => anim.play())
 				// transition the question mark to a picture
-				gsap.to(questionMark, {
+				gsap.to(photo, {
 					pixi: { alpha: 0 },
 					duration: 1,
 					ease: 'sine.inOut',
 					onComplete: () => {
-						questionMark.width = 140
-						questionMark.height = 140
-						questionMark.position.set(0, 0)
-						questionMark.texture = PIXI.Texture.from('./assets/avatar.png')
-						gsap.to(questionMark, {
+						photo.width = 140
+						photo.height = 140
+						photo.position.x = 144
+						photo.texture = PIXI.Texture.from('./assets/propic.png')
+						gsap.to(photo, {
 							pixi: { alpha: 1 },
 							duration: 1,
 							ease: 'sine.inOut',
